@@ -52,27 +52,40 @@ Update after each release: **`jobgru update`** (pulls latest from `main`).
 
 ### 1. Copy the Google Sheet template
 
-1. Open: https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit
-2. **File → Make a copy** → tab must stay **`Job Applications`**
-3. In any agent chat:
+**Open the template (viewer access is OK — you only copy from it):**
+
+https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit
+
+**Then: File → Make a copy** → tab must stay **`Job Applications`**
+
+> **Do not paste the template URL into Jobgru setup.** The template is read-only. You need **your own copy** where you are Owner/Editor.
+
+| What you use | Access needed | Jobgru can write? |
+| --- | --- | --- |
+| Template link (above) | Viewer | No — copy only, never use in setup |
+| **Your copy** (after Make a copy) | **Owner / Editor** (automatic) | **Yes** — paste this URL in setup |
+| Someone else's shared sheet | Viewer or Commenter | No — permission denied |
+| Your copy + wrong Google account in `gcloud auth` | — | No — account must match sheet owner |
+
+**Use your copy's URL** in chat or terminal:
 
 ```text
-Jobgru setup — I copied the template. My sheet: <YOUR URL>. My name: <YOUR NAME>
+Jobgru setup — I copied the template. My sheet: <YOUR COPY URL>. My name: <YOUR NAME>
 ```
 
-Or terminal:
-
 ```bash
-jobgru setup --url "https://docs.google.com/spreadsheets/d/..." --name "Your Name"
+jobgru setup --url "https://docs.google.com/spreadsheets/d/YOUR_COPY_ID/edit" --name "Your Name"
 ```
 
 ### 2. Google auth (terminal — once)
+
+Sign in with the **same Google account** that owns your copied sheet:
 
 ```bash
 gcloud auth login --enable-gdrive-access --update-adc
 ```
 
-Then: **`Jobgru check`** or `jobgru check`
+Then verify: **`Jobgru check`** or `jobgru check` → should show **READY** and `sheet_write: OK`.
 
 ---
 
@@ -133,8 +146,9 @@ Run **`jobgru check`** first.
 | Problem | Fix |
 | --- | --- |
 | Auth failed | `gcloud auth login --enable-gdrive-access --update-adc` |
+| Sheet write failed / permission denied | Use **your copy** URL (not template); you must be Editor/Owner; `gcloud auth` same account |
 | No browser / LeadGru skipped | `jobgru mcp install` (Claude/Codex) or use Cursor |
-| ATS skipped | Copy resume to `~/.jobgru/data/resumes/` |
+| ATS skipped | Copy resume to `~/.jobgru/data/resumes/` or attach in chat: Jobgru add resume |
 | Wrong sheet | Recopy template; tab = `Job Applications` |
 
 Details: [docs/SETUP.md](docs/SETUP.md)

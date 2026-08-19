@@ -27,6 +27,8 @@ Install: ~/.jobgru ({mode} mode) · Template: {TEMPLATE_URL}
 
 YOU do (2 manual steps):
   1. Copy template → File → Make a copy → tab must stay "Job Applications"
+     Template is viewer-only (OK). YOUR copy must be Editor/Owner — not someone else's viewer link.
+     gcloud auth must use the same Google account that owns your copy.
   2. Terminal auth (sheet owner Google account):
      gcloud auth login --enable-gdrive-access --update-adc
 

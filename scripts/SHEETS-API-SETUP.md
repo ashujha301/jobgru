@@ -35,6 +35,8 @@ Expected output: `OK: Sheets API write verified`
 | `gcloud auth login` without `--enable-gdrive-access` | `403 insufficient scopes` |
 | `gcloud auth application-default login --scopes=.../spreadsheets` | *"This app is blocked"* |
 | Wrong Google account | Sheet not found or permission denied |
+| Template URL in setup (viewer only) | Cannot write — use **your copy** URL after File → Make a copy |
+| Viewer access to someone else's sheet | Permission denied on write |
 
 Re-auth when token expires:
 

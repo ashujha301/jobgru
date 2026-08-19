@@ -10,6 +10,9 @@ Onboarding skill for new users. **Never ask users to edit `config/sheet.json` or
 The user only does **two things manually**:
 
 1. Copy the [starter template](https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit) → **File → Make a copy** → tab must stay **`Job Applications`**
+   - Template link is **viewer** — that is OK for copying only. **Do not** paste the template URL into Jobgru setup.
+   - Your **copy** must be owned by you (**Editor/Owner**). Viewer-only access to someone else's sheet will not work.
+   - `gcloud auth login` must use the **same Google account** that owns your copy.
 2. Run in terminal: `gcloud auth login --enable-gdrive-access --update-adc`
 
 Everything else is handled by this skill.
