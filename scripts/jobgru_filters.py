@@ -7,128 +7,134 @@ import argparse
 import json
 import sys
 
+RUN_LIMITS = {
+    "max_jobs_per_run": 50,
+    "max_linkedin_per_run": 25,
+    "linkedin_researchers": 1,
+}
+
 FILTER_CATALOG: list[dict] = [
     {
         "id": "count",
-        "prompt_label": "Target / count",
-        "description": "How many verified jobs to find this run.",
-        "examples": ["3", "5", "5–10"],
-        "default": "5–10",
+        "name": "Target / count",
+        "say": "Say how many jobs you want this run.",
+        "examples": ["find 3 jobs", "find 10 jobs", "find up to 30 jobs"],
+        "limits": "Max 50 jobs per run (hard cap).",
     },
     {
         "id": "sources",
-        "prompt_label": "Sources / boards",
-        "description": "Job boards to search. Can limit to one or use several in parallel.",
+        "name": "Job boards / sources",
+        "say": "Say which board(s) to search — one, several, or a mix.",
         "examples": [
-            "LinkedIn Jobs only",
-            "LinkedIn Jobs, Wellfound, Indeed",
-            "YC Jobs, company career pages",
+            "LinkedIn only",
+            "LinkedIn and Wellfound",
+            "mix: LinkedIn + Indeed + YC Jobs",
         ],
-        "default": "LinkedIn Jobs, Wellfound, Indeed, YC Jobs, remote boards",
+        "modes": [
+            "Single — one board only (e.g. LinkedIn only)",
+            "Multiple — same search across several boards in parallel",
+            "Mix & match — pick any combination you name in the prompt",
+        ],
+        "limits": "LinkedIn max 25 jobs per run (rate-limit safety). Other boards share the remaining quota up to 50 total.",
     },
     {
         "id": "roles",
-        "prompt_label": "Role / domain",
-        "description": "Primary job titles or role families you want.",
+        "name": "Role / domain",
+        "say": "Say the job titles or role families you want.",
         "examples": [
             "Software Engineer, SWE AI",
             "Backend Engineer, Full Stack Engineer",
-            "AI Engineer, ML Engineer, Applied AI",
         ],
     },
     {
         "id": "role_variants",
-        "prompt_label": "Acceptable role variants",
-        "description": "Close title variants to include when the job description matches your domain.",
+        "name": "Acceptable role variants",
+        "say": "Say similar titles to include when the description still matches.",
         "examples": [
-            "LLM Engineer, Software Engineer AI/ML",
-            "SDE, Full Stack, Backend when stack matches",
+            "include LLM Engineer, Software Engineer AI/ML",
+            "include SDE / Full Stack when stack matches",
         ],
     },
     {
         "id": "location",
-        "prompt_label": "Location",
-        "description": "City, country, or region filter for the search.",
+        "name": "Location",
+        "say": "Say city, country, or region.",
         "examples": ["Bangalore", "India", "US remote-eligible"],
     },
     {
         "id": "remote_restriction",
-        "prompt_label": "Remote country / time-zone restriction",
-        "description": "Where remote work must be allowed from.",
+        "name": "Remote country / time zone",
+        "say": "Say where remote work must be allowed from.",
         "examples": ["India only", "US time zones", "any worldwide remote"],
     },
     {
         "id": "work_arrangement",
-        "prompt_label": "Work arrangement",
-        "description": "Onsite, hybrid, remote, or any combination.",
-        "examples": ["remote", "hybrid Bangalore", "onsite Bangalore", "remote / hybrid / any"],
-        "default": "any",
+        "name": "Work arrangement",
+        "say": "Say remote, hybrid, onsite, or any.",
+        "examples": ["remote only", "hybrid Bangalore", "onsite or hybrid"],
     },
     {
         "id": "experience",
-        "prompt_label": "Experience",
-        "description": "Years of experience or seniority band you want.",
+        "name": "Experience",
+        "say": "Say years of experience or seniority you want.",
         "examples": ["0–2 years", "2–5 years", "3+ years", "mid-level"],
     },
     {
         "id": "visa",
-        "prompt_label": "Visa sponsorship",
-        "description": "Whether visa sponsorship matters for the role.",
-        "examples": ["required", "preferred", "irrelevant", "exclude"],
-        "default": "irrelevant",
+        "name": "Visa sponsorship",
+        "say": "Say if visa sponsorship matters.",
+        "examples": ["visa required", "visa irrelevant", "no visa needed"],
     },
     {
         "id": "required_skills",
-        "prompt_label": "Required skills",
-        "description": "Must-have skills or keywords from listings.",
-        "examples": ["Python, FastAPI, PostgreSQL", "React, Node.js", "LLMs, agents, backend"],
+        "name": "Required skills",
+        "say": "Say must-have skills or keywords.",
+        "examples": ["Python, FastAPI, PostgreSQL", "React, Node.js", "LLMs, agents"],
     },
     {
         "id": "excluded_roles",
-        "prompt_label": "Excluded roles / skills",
-        "description": "Titles or domains to skip even if keyword overlap exists.",
+        "name": "Excluded roles",
+        "say": "Say titles or domains to skip.",
         "examples": [
-            "Data Scientist, Data Engineer",
-            "sales, internships, data annotation",
-            "5+ years senior, staff engineer",
+            "exclude Data Scientist, Data Engineer",
+            "exclude sales and internships",
+            "exclude 5+ years senior roles",
         ],
     },
     {
         "id": "min_compensation",
-        "prompt_label": "Minimum compensation",
-        "description": "Pay floor if you want to filter by salary.",
-        "examples": ["₹20L", "$120k", "not required"],
+        "name": "Minimum compensation",
+        "say": "Say a pay floor, or skip if not needed.",
+        "examples": ["minimum ₹20L", "minimum $120k", "not required"],
     },
     {
         "id": "employment_type",
-        "prompt_label": "Employment type",
-        "description": "Full-time, contract, internship, etc.",
-        "examples": ["full-time", "contract", "internship exclude"],
+        "name": "Employment type",
+        "say": "Say full-time, contract, etc.",
+        "examples": ["full-time only", "no internships", "contract ok"],
     },
     {
         "id": "max_posting_age",
-        "prompt_label": "Maximum posting age",
-        "description": "How recent listings must be.",
-        "examples": ["7 days", "2 weeks", "30 days"],
+        "name": "Maximum posting age",
+        "say": "Say how recent listings must be.",
+        "examples": ["posted in last 7 days", "last 2 weeks", "last 30 days"],
     },
     {
         "id": "exclude_staffing_agencies",
-        "prompt_label": "Exclude staffing agencies",
-        "description": "Skip third-party recruiters / staffing firms.",
-        "examples": ["yes", "no"],
-        "default": "yes",
+        "name": "Exclude staffing agencies",
+        "say": "Say yes to skip recruiters/staffing firms.",
+        "examples": ["exclude staffing agencies", "staffing agencies ok"],
     },
     {
         "id": "ats_scoring",
-        "prompt_label": "ATS scoring",
-        "description": "Run resume fit scoring after jobs are added.",
-        "examples": ["yes", "no"],
-        "default": "yes",
+        "name": "ATS scoring",
+        "say": "Say yes to score your resume after jobs are added.",
+        "examples": ["run ATS scoring", "skip ATS scoring"],
     },
     {
         "id": "note",
-        "prompt_label": "Note (override)",
-        "description": "Extra instructions that override default skip rules.",
+        "name": "Note (extra instructions)",
+        "say": "Say anything else in plain English — overrides default skip rules.",
         "examples": [
             "don't skip if experience matches for similar roles",
             "include if visa is not stated",
@@ -140,24 +146,38 @@ FILTER_CATALOG: list[dict] = [
 
 def catalog_text() -> str:
     lines = [
-        "Jobgru — available job-search filters",
-        "Use these in a natural prompt or fill prompts/jobgru-run.md",
+        "Jobgru — filters you can use in a job-search prompt",
+        "",
+        "Write in plain English — pick any filters below and say what you want.",
+        "You do not need every filter; only mention what matters to you.",
+        "",
+        "Run limits:",
+        f"  • Max {RUN_LIMITS['max_jobs_per_run']} jobs per run (total across all boards)",
+        f"  • Max {RUN_LIMITS['max_linkedin_per_run']} jobs from LinkedIn per run (rate-limit safety)",
+        f"  • One LinkedIn researcher per run",
+        "",
         "=" * 44,
         "",
     ]
     for idx, item in enumerate(FILTER_CATALOG, start=1):
-        lines.append(f"{idx}. {item['prompt_label']}")
-        lines.append(f"   {item['description']}")
-        if item.get("default"):
-            lines.append(f"   Default: {item['default']}")
+        lines.append(f"{idx}. {item['name']}")
+        lines.append(f"   {item['say']}")
+        if item.get("modes"):
+            lines.append("   Boards — pick one style:")
+            for mode in item["modes"]:
+                lines.append(f"     • {mode}")
+        if item.get("limits"):
+            lines.append(f"   Limit: {item['limits']}")
         if item.get("examples"):
-            lines.append(f"   Examples: {' | '.join(item['examples'][:3])}")
+            for ex in item["examples"][:3]:
+                lines.append(f"   e.g. {ex}")
         lines.append("")
     lines.extend(
         [
-            "Example prompt:",
-            '  Jobgru — find 3 SWE jobs on LinkedIn in Bangalore. Include SWE AI.',
-            "  Exclude Data Scientist and Data Engineer. Don't skip if exp matches.",
+            "Example (natural prompt):",
+            '  Jobgru — find 3 Software Engineer jobs on LinkedIn only in Bangalore.',
+            "  Include SWE AI. Exclude Data Scientist and Data Engineer.",
+            "  Don't skip similar roles if experience matches.",
             "",
             "Full template: prompts/jobgru-run.md",
         ]
@@ -166,7 +186,11 @@ def catalog_text() -> str:
 
 
 def catalog_json() -> dict:
-    return {"filters": FILTER_CATALOG, "count": len(FILTER_CATALOG)}
+    return {
+        "run_limits": RUN_LIMITS,
+        "filters": FILTER_CATALOG,
+        "count": len(FILTER_CATALOG),
+    }
 
 
 def cmd_list(args: argparse.Namespace) -> int:

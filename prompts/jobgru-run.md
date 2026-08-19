@@ -9,9 +9,10 @@ Use the jobgru skill (full pipeline — Phase 1 Jobgru + Phase 2 LeadGru + Phase
 
 Google Sheet (read URL from config/sheet.json → sheet_url):
 
-Target: 5–10 verified unique jobs this run.
-Stop at 10 committed rows, or at 5+ if sources are exhausted or blocked.
-Maximum 5 accepted jobs per board.
+Target: user-requested count (max 50 verified unique jobs this run).
+Stop at 50 committed rows (hard cap).
+LinkedIn Jobs: max 25 accepted jobs this run (rate-limit safety).
+Other boards: single, multiple, or mix & match — share remaining quota up to 50 total.
 Use only one LinkedIn researcher.
 
 Read the sheet first via Sheets API (scripts/sheets_write.py read --range "A2:H500") and build the duplicate index.

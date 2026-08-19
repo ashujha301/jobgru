@@ -4,7 +4,7 @@
 Jobgru filter
 ```
 
-Lists every filter type you can use in a job-search prompt (roles, location, experience, excluded roles, etc.) — not your saved values.
+Lists every filter type you can use in a job-search prompt — plain-English names with **e.g.** examples. Run limits: **50 jobs max per run**, **25 max from LinkedIn**.
 
 Terminal:
 

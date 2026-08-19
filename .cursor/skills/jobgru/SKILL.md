@@ -1,11 +1,11 @@
 ---
 name: jobgru
-description: Jobgru pipeline Phase 1 — coordinate parallel job-board researchers to find and verify 5–10 unique jobs per run, deduplicate against the Job Applications Google Sheet, append rows via scripts/sheets_write.py, then automatically run LeadGru (Phase 2) and ATSScore (Phase 2b) in parallel for those new rows. Use when the user asks for Jobgru, job search, filtered openings, or to fill the tracker from LinkedIn, Wellfound, Indeed, YC Jobs, or other boards. One user prompt runs all phases; do not stop after sheet append.
+description: Jobgru pipeline Phase 1 — coordinate parallel job-board researchers to find and verify up to 50 unique jobs per run (LinkedIn max 25/run), deduplicate against the Job Applications Google Sheet, append rows via scripts/sheets_write.py, then automatically run LeadGru (Phase 2) and ATSScore (Phase 2b) in parallel for those new rows. Use when the user asks for Jobgru, job search, filtered openings, or to fill the tracker from LinkedIn, Wellfound, Indeed, YC Jobs, or other boards. One user prompt runs all phases; do not stop after sheet append.
 ---
 
 # Jobgru (Pipeline Phase 1)
 
-Coordinate parallel read-only researchers across job boards, verify each listing, deduplicate, and append 5–10 unique jobs per run to the Job Applications tracker. **Only the coordinator writes to the sheet** — always via `scripts/sheets_write.py` (Google Sheets API). **Never use agent browser tools to type into sheet cells** (Enter/Tab does not commit edits). Sheet writes = Sheets API only.
+Coordinate parallel read-only researchers across job boards, verify each listing, deduplicate, and append up to **50 unique jobs per run** to the Job Applications tracker (LinkedIn capped at **25/run** for rate-limit safety). **Only the coordinator writes to the sheet** — always via `scripts/sheets_write.py` (Google Sheets API). **Never use agent browser tools to type into sheet cells** (Enter/Tab does not commit edits). Sheet writes = Sheets API only.
 
 ## Browser tools (job boards + LinkedIn)
 
@@ -121,10 +121,10 @@ Older rows (before Aug 2026) may still have apply URLs inside column F; do not r
 
 ## Per-run limits
 
-- Target: **5–10 verified unique jobs**
-- Stop at **10** committed rows
-- Stop at **≥5** if sources are exhausted or blocked
-- Max **5 accepted jobs per board**
+- Target: user-requested count, **max 50 verified unique jobs per run** (hard cap)
+- **LinkedIn Jobs: max 25 accepted jobs per run** — protects account from rate limits; stop LinkedIn at 25 even if user asks for more
+- Other boards share the remaining quota up to the 50 total (single board, multiple boards in parallel, or mix & match — user chooses in prompt)
+- Stop early if sources are exhausted or blocked (report partial status)
 - **One** LinkedIn researcher only
 - Do not loosen filters to hit the target
 
@@ -575,7 +575,7 @@ Before **pipeline** completion (Phase 1 + Phase 2):
 
 **Phase 1 (Jobgru):**
 
-1. 5–10 rows appended (or fewer with source-exhaustion report)
+1. Up to 50 rows appended (or fewer with source-exhaustion report; LinkedIn capped at 25)
 2. Every row has Company, Position, apply URL in column C, `to apply`, date, Details in F
 3. No duplicate company+similar-role against pre-run snapshot
 4. Existing rows and columns K+ unchanged

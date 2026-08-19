@@ -11,7 +11,7 @@ Use the jobgru skill (full pipeline — Phase 1 + Phase 2 LeadGru + Phase 2b ATS
 
 Google Sheet (read URL from config/sheet.json → sheet_url):
 
-Phase 1 — Jobgru: find 5–10 verified unique jobs, dedupe, append via Sheets API.
+Phase 1 — Jobgru: find up to 50 verified unique jobs (LinkedIn max 25), dedupe, append via Sheets API.
   Details (F) must include | Skills: keyword1, keyword2, ... (5–12 from listing)
 
 Phase 2 — LeadGru + Phase 2b ATSScore (parallel, automatic):
