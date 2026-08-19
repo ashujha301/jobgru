@@ -475,6 +475,10 @@ def cmd_delete_rows(args: argparse.Namespace) -> int:
         return 0
 
     delete_sheet_rows(service, args.spreadsheet_id, args.tab, rows)
+    # Row deletion shrinks M2:M7 formula ranges (e.g. D989 → D987) — restore them.
+    from sheet_validate import restore_summary_formulas
+
+    restore_summary_formulas(service, args.spreadsheet_id, args.tab)
     apply_sheet_layout(service, args.spreadsheet_id, args.tab, max_row=args.max_row)
     next_empty = find_first_empty_row(service, args.spreadsheet_id, args.tab)
     print(
@@ -483,6 +487,7 @@ def cmd_delete_rows(args: argparse.Namespace) -> int:
                 "deleted_rows": rows,
                 "deleted_count": len(rows),
                 "next_empty_row": next_empty,
+                "summary_formulas": "restored",
                 "format_layout": "applied",
             },
             indent=2,

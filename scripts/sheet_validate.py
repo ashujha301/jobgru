@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from sheets_write import read_range
 
 DEFAULT_TAB = "Job Applications"
@@ -26,6 +28,17 @@ SUMMARY_FORMULAS = [
     '=COUNTIF(D2:D989, "Selected")',
     '=COUNTIF(D3:D989, "Assesment")',
     '=COUNTIF(D4:D989, "Contacted")',
+]
+
+# Row deletions make Sheets shrink formula ranges (D989 → D984 after 5 deletes).
+# Validate the formula shape and tolerate any end row.
+SUMMARY_FORMULA_PATTERNS = [
+    re.compile(r"^=COUNTA\(D2:D\d+\)$"),
+    re.compile(r'^=COUNTIF\(D2:D\d+,\s*"Interview"\)$'),
+    re.compile(r'^=COUNTIF\(D2:D\d+,\s*"Rejected"\)$'),
+    re.compile(r'^=COUNTIF\(D2:D\d+,\s*"Selected"\)$'),
+    re.compile(r'^=COUNTIF\(D3:D\d+,\s*"Assesment"\)$'),
+    re.compile(r'^=COUNTIF\(D4:D\d+,\s*"Contacted"\)$'),
 ]
 
 STATUS_DROPDOWN_VALUES = [
@@ -73,10 +86,27 @@ def validate_summary_formulas(service, spreadsheet_id: str, tab: str) -> tuple[b
         .execute()
     )
     got = [row[0] if row else "" for row in resp.get("values", [])]
-    for i, (expected, actual) in enumerate(zip(SUMMARY_FORMULAS, got, strict=False)):
-        if actual != expected:
-            issues.append(f"M{i + 2}: expected {expected!r}, got {actual!r}")
+    while len(got) < len(SUMMARY_FORMULA_PATTERNS):
+        got.append("")
+    for i, (pattern, actual) in enumerate(zip(SUMMARY_FORMULA_PATTERNS, got, strict=False)):
+        if not pattern.match(str(actual)):
+            issues.append(
+                f"M{i + 2}: expected {SUMMARY_FORMULAS[i]!r} (any end row), got {actual!r}"
+            )
     return not issues, issues
+
+
+def restore_summary_formulas(service, spreadsheet_id: str, tab: str) -> None:
+    """Rewrite M2:M7 with canonical formulas (row deletes shrink the ranges)."""
+    from sheets_write import write_range
+
+    write_range(
+        service,
+        spreadsheet_id,
+        tab,
+        "M2:M7",
+        [[f] for f in SUMMARY_FORMULAS],
+    )
 
 
 def validate_status_dropdown(service, spreadsheet_id: str, tab: str) -> tuple[bool, list[str]]:
