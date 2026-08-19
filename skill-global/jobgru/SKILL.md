@@ -31,8 +31,12 @@ test -d ~/.jobgru/scripts && echo ~/.jobgru || pwd
 | Agent | Browser tools |
 | --- | --- |
 | **Cursor** | Cursor Browser (browser_navigate, browser_snapshot, browser_click, …) |
-| **Claude Code / Codex** | Playwright MCP — install once: `jobgru mcp install` |
+| **Claude Code / Codex** | **Playwright MCP tools only** (`playwright.browser_navigate`, `browser_snapshot`, `browser_click`) — install once: `jobgru mcp install` |
 | **No browser tools** | Run sheet writes + ATS only; report that LeadGru/job-board phases were skipped |
+
+**Codex:** for LinkedIn/job-board browsing, call the **`playwright` MCP server tools directly** (`playwright.browser_navigate` etc.). Do NOT use the bundled browser-control skill / `node_repl` browser runtime — it is a different browser with no LinkedIn session. If `playwright` tools are not listed, tell the user to run `jobgru mcp install` and restart the Codex session.
+
+The Playwright profile lives at `~/.jobgru/browser-profile` — LinkedIn login persists between sessions. Sign in once, reuse forever.
 
 User completes MFA/CAPTCHA manually in the visible browser window.
 

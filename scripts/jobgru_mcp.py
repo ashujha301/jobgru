@@ -68,15 +68,18 @@ def linkedin_login_instructions() -> str:
 LeadGru needs a **signed-in LinkedIn** session in Playwright — not public web search.
 
 One-time setup:
-  1. jobgru mcp install --force
-  2. In Codex (or Claude Code), paste:
+  1. jobgru mcp install        (register BEFORE starting the Codex session)
+  2. Start a NEW Codex session, then paste:
 
-     Open https://www.linkedin.com/login using Playwright MCP.
+     Use the playwright MCP tool browser_navigate to open
+     https://www.linkedin.com/login — do not use any built-in browser skill.
      Wait while I sign in manually. Do not continue until I say I'm logged in.
 
   3. A browser window opens — sign into LinkedIn (complete MFA if asked)
   4. Say: "I'm logged in to LinkedIn"
-  5. Session is saved in: {BROWSER_PROFILE}
+  5. Close the window or leave it — login is saved on disk in:
+     {BROWSER_PROFILE}
+     Future runs reuse it automatically. No re-login needed.
 
 Backfill leads for existing rows:
   LeadGru backfill rows 42-43 — use Playwright MCP, signed-in LinkedIn only.

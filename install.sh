@@ -89,12 +89,15 @@ install_path_command() {
 
 register_mcp() {
   [[ "$SKIP_MCP" -eq 1 ]] && return
+  # Persistent profile keeps LinkedIn login between sessions (LeadGru).
+  local profile="$JOBGRU_HOME/browser-profile"
+  mkdir -p "$profile"
   if command -v claude >/dev/null 2>&1; then
     if claude mcp list 2>/dev/null | grep -q playwright; then
       echo "==> Playwright MCP already registered (claude)"
     else
       echo "==> Registering Playwright MCP (claude)"
-      claude mcp add playwright -- npx @playwright/mcp@latest || echo "WARN: claude mcp add failed" >&2
+      claude mcp add playwright -- npx @playwright/mcp@latest --user-data-dir "$profile" || echo "WARN: claude mcp add failed" >&2
     fi
   fi
   if command -v codex >/dev/null 2>&1; then
@@ -102,7 +105,7 @@ register_mcp() {
       echo "==> Playwright MCP already registered (codex)"
     else
       echo "==> Registering Playwright MCP (codex)"
-      codex mcp add playwright -- npx @playwright/mcp@latest || echo "WARN: codex mcp add failed" >&2
+      codex mcp add playwright -- npx @playwright/mcp@latest --user-data-dir "$profile" || echo "WARN: codex mcp add failed" >&2
     fi
   fi
 }

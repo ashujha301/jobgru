@@ -122,16 +122,22 @@ jobgru mcp login
 
 This registers Playwright with a persistent profile at **`~/.jobgru/browser-profile`** (LinkedIn cookies saved between runs).
 
-**In Codex or Claude Code chat — paste once:**
+**Important:** register the MCP **before** starting the Codex/Claude session — tools load at session start. If the agent says "no browser available", restart the session.
+
+**In a new Codex or Claude Code session — paste once:**
 
 ```text
-Open https://www.linkedin.com/login using Playwright MCP.
+Use the playwright MCP tool browser_navigate to open https://www.linkedin.com/login — do not use any built-in browser skill.
 Wait while I sign in manually. Do not continue until I say I'm logged in.
 ```
 
 1. A browser window opens  
 2. Sign into LinkedIn (complete MFA if asked)  
 3. Say: **I'm logged in to LinkedIn**
+
+**After login you can close the browser window.** The session is saved on disk in `~/.jobgru/browser-profile` — every future Playwright run reopens already logged in. No re-login unless LinkedIn itself expires the session.
+
+> Note: only **one** agent can use the browser profile at a time. Don't run Codex and Claude Code LinkedIn tasks simultaneously.
 
 ### Backfill leads after a partial run
 
