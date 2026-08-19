@@ -113,31 +113,26 @@ Then verify: **`Jobgru check`** or `jobgru check` → should show **READY** and 
 
 ### One-time setup (Codex or Claude Code)
 
-**Terminal:**
+**The installer does this for you** — it registers Playwright MCP and asks *"Sign into LinkedIn now?"*. Say **y**, sign in in the browser window that opens, close the window. Done.
+
+If you skipped it during install, run anytime:
 
 ```bash
-jobgru mcp install --force
 jobgru mcp login
 ```
 
-This registers Playwright with a persistent profile at **`~/.jobgru/browser-profile`** (LinkedIn cookies saved between runs).
+A browser opens on LinkedIn login → sign in (MFA ok) → **close the window**. The session is saved in **`~/.jobgru/browser-profile`** and reused by every future run — no re-login unless LinkedIn itself expires it.
 
-**Important:** register the MCP **before** starting the Codex/Claude session — tools load at session start. If the agent says "no browser available", restart the session.
-
-**In a new Codex or Claude Code session — paste once:**
+**Fallback (in-chat login)** — if the terminal flow doesn't work, start a **new** Codex/Claude session and paste:
 
 ```text
 Use the playwright MCP tool browser_navigate to open https://www.linkedin.com/login — do not use any built-in browser skill.
 Wait while I sign in manually. Do not continue until I say I'm logged in.
 ```
 
-1. A browser window opens  
-2. Sign into LinkedIn (complete MFA if asked)  
-3. Say: **I'm logged in to LinkedIn**
+Sign in, then say: **I'm logged in to LinkedIn**
 
-**After login you can close the browser window.** The session is saved on disk in `~/.jobgru/browser-profile` — every future Playwright run reopens already logged in. No re-login unless LinkedIn itself expires the session.
-
-> Note: only **one** agent can use the browser profile at a time. Don't run Codex and Claude Code LinkedIn tasks simultaneously.
+> Notes: register the MCP **before** starting a Codex/Claude session (tools load at session start — restart the session if the agent says "no browser available"). Only **one** agent can use the browser profile at a time — don't run Codex and Claude LinkedIn tasks simultaneously.
 
 ### Backfill leads after a partial run
 

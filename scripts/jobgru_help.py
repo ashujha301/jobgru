@@ -46,8 +46,7 @@ TERMINAL commands:
   jobgru check
   jobgru setup --url SHEET_URL --name YOUR_NAME [--resume-link URL]
   jobgru mcp install          Register Playwright MCP (Claude + Codex)
-  jobgru mcp install --force  Re-register with persistent LinkedIn profile
-  jobgru mcp login            LinkedIn sign-in steps for LeadGru
+  jobgru mcp login            Open LinkedIn login in the Jobgru browser (one time)
   jobgru mcp status           Browser/MCP status
   jobgru filter               List all filter types for job-search prompts
   jobgru filter --json        Same catalog as JSON

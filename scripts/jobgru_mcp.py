@@ -67,25 +67,59 @@ def linkedin_login_instructions() -> str:
 
 LeadGru needs a **signed-in LinkedIn** session in Playwright — not public web search.
 
-One-time setup:
-  1. jobgru mcp install        (register BEFORE starting the Codex session)
-  2. Start a NEW Codex session, then paste:
+Easiest way (terminal, one time):
+  jobgru mcp login
+  → a browser window opens on LinkedIn login
+  → sign in (complete MFA if asked), then close the window
+  → login is saved in {BROWSER_PROFILE} and reused by every future run
 
+Alternative (inside a Codex/Claude session):
+  Paste:
      Use the playwright MCP tool browser_navigate to open
      https://www.linkedin.com/login — do not use any built-in browser skill.
      Wait while I sign in manually. Do not continue until I say I'm logged in.
-
-  3. A browser window opens — sign into LinkedIn (complete MFA if asked)
-  4. Say: "I'm logged in to LinkedIn"
-  5. Close the window or leave it — login is saved on disk in:
-     {BROWSER_PROFILE}
-     Future runs reuse it automatically. No re-login needed.
+  Sign in, then say: "I'm logged in to LinkedIn"
 
 Backfill leads for existing rows:
   LeadGru backfill rows 42-43 — use Playwright MCP, signed-in LinkedIn only.
 
 Cursor users: sign into LinkedIn in Cursor Browser instead — no MCP step.
 """
+
+
+def open_linkedin_login() -> int:
+    """Open LinkedIn login in a Playwright browser using the persistent profile."""
+    if not shutil.which("npx"):
+        print("npx not found — install Node.js first, or use the in-chat login flow:")
+        print(linkedin_login_instructions())
+        return 1
+    BROWSER_PROFILE.mkdir(parents=True, exist_ok=True)
+    print("Opening LinkedIn login in the Jobgru browser profile...")
+    print("Sign in (complete MFA if asked), then CLOSE the browser window to finish.")
+    print(f"Profile: {BROWSER_PROFILE}")
+    cmd = [
+        "npx",
+        "-y",
+        "playwright@latest",
+        "open",
+        "--channel=chrome",
+        "--user-data-dir",
+        str(BROWSER_PROFILE),
+        "https://www.linkedin.com/login",
+    ]
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        # Chrome channel missing — retry with bundled chromium
+        cmd.remove("--channel=chrome")
+        result = subprocess.run(cmd)
+    if result.returncode == 0:
+        print("")
+        print("Browser closed. If you signed in, the LinkedIn session is saved.")
+        print("It will be reused automatically — no re-login needed.")
+        return 0
+    print("Could not open the browser. Use the in-chat flow instead:")
+    print(linkedin_login_instructions())
+    return 1
 
 
 def status_payload() -> dict:
@@ -158,9 +192,11 @@ def cmd_install(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
-def cmd_login(_args: argparse.Namespace) -> int:
-    print(linkedin_login_instructions())
-    return 0
+def cmd_login(args: argparse.Namespace) -> int:
+    if args.print_only:
+        print(linkedin_login_instructions())
+        return 0
+    return open_linkedin_login()
 
 
 def cmd_status(args: argparse.Namespace) -> int:
@@ -176,7 +212,8 @@ def build_parser() -> argparse.ArgumentParser:
     install_p = sub.add_parser("install", help="Register Playwright MCP with persistent LinkedIn profile")
     install_p.add_argument("--force", action="store_true", help="Re-register MCP with profile dir")
     install_p.set_defaults(func=cmd_install)
-    login_p = sub.add_parser("login", help="Show LinkedIn sign-in steps for LeadGru")
+    login_p = sub.add_parser("login", help="Open LinkedIn login in the Jobgru browser profile")
+    login_p.add_argument("--print-only", action="store_true", help="Print instructions without opening a browser")
     login_p.set_defaults(func=cmd_login)
     status_p = sub.add_parser("status", help="Show browser/MCP status per agent")
     status_p.add_argument("--json", action="store_true")

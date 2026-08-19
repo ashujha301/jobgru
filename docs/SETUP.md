@@ -80,15 +80,18 @@ codex mcp add playwright -- npx @playwright/mcp@latest
 
 ### LinkedIn login for LeadGru (Codex / Claude Code — one time)
 
+The installer offers this automatically. To do it manually:
+
 ```bash
-jobgru mcp install --force    # persistent profile at ~/.jobgru/browser-profile
-jobgru mcp login              # step-by-step sign-in instructions
+jobgru mcp login    # opens LinkedIn login in the Jobgru browser profile
 ```
 
-In **Codex** chat, paste once:
+Sign in (MFA ok), then **close the browser window** — session saved to `~/.jobgru/browser-profile`.
+
+In-chat fallback (new Codex/Claude session):
 
 ```text
-Open https://www.linkedin.com/login using Playwright MCP.
+Use the playwright MCP tool browser_navigate to open https://www.linkedin.com/login — do not use any built-in browser skill.
 Wait while I sign in manually. Stop until I say I'm logged in.
 ```
 
