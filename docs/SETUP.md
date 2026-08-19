@@ -13,6 +13,9 @@ This doc is for troubleshooting and technical detail. You do not need to read it
 | Jobgru setup | [prompts/setup.md](../prompts/setup.md) |
 | Jobgru help | [prompts/help.md](../prompts/help.md) |
 | Jobgru check | [prompts/check.md](../prompts/check.md) |
+| Jobgru mcp | `jobgru mcp install` / [docs/SETUP.md#browser-and-mcp](#browser-and-mcp) |
+| Jobgru filter | [prompts/filter.md](../prompts/filter.md) |
+| Jobgru delete | [prompts/delete.md](../prompts/delete.md) |
 
 Agent skill: [.cursor/skills/jobgru-setup/SKILL.md](../.cursor/skills/jobgru-setup/SKILL.md)
 
@@ -51,27 +54,55 @@ Exit code `0` = ready; `1` = fix failures.
 
 ## Terminal agents (Claude Code, Codex)
 
-Global install registers **Playwright MCP** for browser automation (LinkedIn, job boards):
+### Browser and MCP {#browser-and-mcp}
+
+| Agent | Browser | Setup |
+| --- | --- | --- |
+| **Cursor** | Cursor Browser (built-in) | None |
+| **Claude Code** | Playwright MCP → Chrome | `jobgru mcp install` |
+| **Codex** | Playwright MCP → Chrome | `jobgru mcp install` |
+
+```bash
+jobgru mcp install    # registers Playwright for Claude + Codex
+jobgru mcp status     # verify registration
+```
+
+Manual equivalent:
 
 ```bash
 claude mcp add playwright -- npx @playwright/mcp@latest
 codex mcp add playwright -- npx @playwright/mcp@latest
 ```
 
-The [install.sh](../install.sh) script does this automatically when `claude` / `codex` CLIs are on PATH.
+[install.sh](../install.sh) runs `jobgru mcp install` automatically when `claude` / `codex` CLIs are on PATH.
 
-Without browser tools, Jobgru still runs sheet writes + ATS; LeadGru and job-board search are skipped.
+**Why LeadGru skipped but jobs worked:** Jobgru can find listings via web search without a browser. LeadGru searches LinkedIn *people* and requires a live browser (Playwright MCP in Claude/Codex, Cursor Browser in Cursor).
+
+Without browser tools, Jobgru still runs sheet writes + ATS; LeadGru is skipped.
 
 ### Global install commands
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
+jobgru help
 jobgru check
-jobgru update    # pull latest from main after we push
+jobgru mcp install
+jobgru filter set --location Bangalore --roles "SWE,SWE AI"
+jobgru filter prompt
+jobgru delete --rows 42-44
+jobgru update
 jobgru uninstall
 ```
 
 Engine directory: `~/.jobgru`
+
+**Resume (global install):** PDFs are not copied by the installer. Copy manually:
+
+```bash
+cp ~/path/to/resume.pdf ~/.jobgru/data/resumes/
+```
+
+Or attach PDF during **Jobgru setup** in chat.
 
 ---
 
@@ -132,7 +163,8 @@ Users should **not** edit `config/sheet.json` manually. The agent writes it via:
 ## Resume (optional — ATS)
 
 - Attach PDF during **Jobgru setup**, or say "add resume" with attachment
-- Agent saves to `data/resumes/` and runs `ats_score.py sync`
+- Agent saves to `$JOBGRU_HOME/data/resumes/` (global: `~/.jobgru/data/resumes/`)
+- Global install does **not** copy PDFs from the repo — copy manually or attach in chat
 - No PDFs → ATS skipped automatically
 
 See [data/resumes/README.md](../data/resumes/README.md)

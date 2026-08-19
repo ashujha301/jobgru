@@ -168,6 +168,86 @@ def get_sheet_id(service, spreadsheet_id: str, tab: str) -> int:
     raise SystemExit(f"Tab not found: {tab!r}")
 
 
+def parse_row_spec(spec: str) -> list[int]:
+    """Parse row numbers: 42 | 42,43 | 42-44 | 42,44-46"""
+    rows: set[int] = set()
+    for chunk in spec.replace(" ", "").split(","):
+        if not chunk:
+            continue
+        if "-" in chunk:
+            start_s, end_s = chunk.split("-", 1)
+            start, end = int(start_s), int(end_s)
+            if start > end:
+                start, end = end, start
+            rows.update(range(start, end + 1))
+        else:
+            rows.add(int(chunk))
+    return sorted(rows)
+
+
+def group_contiguous_rows(rows: list[int]) -> list[tuple[int, int]]:
+    """Group 1-based row numbers into contiguous (start, end) inclusive ranges."""
+    if not rows:
+        return []
+    groups: list[tuple[int, int]] = []
+    start = prev = rows[0]
+    for row in rows[1:]:
+        if row == prev + 1:
+            prev = row
+            continue
+        groups.append((start, prev))
+        start = prev = row
+    groups.append((start, prev))
+    return groups
+
+
+def delete_sheet_rows(
+    service,
+    spreadsheet_id: str,
+    tab: str,
+    row_numbers: list[int],
+) -> dict:
+    if not row_numbers:
+        raise SystemExit("No rows to delete")
+    if any(row < 2 for row in row_numbers):
+        raise SystemExit("Cannot delete row 1 (header row)")
+    sheet_id = get_sheet_id(service, spreadsheet_id, tab)
+    requests: list[dict] = []
+    for start_row, end_row in reversed(group_contiguous_rows(row_numbers)):
+        requests.append(
+            {
+                "deleteDimension": {
+                    "range": {
+                        "sheetId": sheet_id,
+                        "dimension": "ROWS",
+                        "startIndex": start_row - 1,
+                        "endIndex": end_row,
+                    }
+                }
+            }
+        )
+    return (
+        service.spreadsheets()
+        .batchUpdate(spreadsheetId=spreadsheet_id, body={"requests": requests})
+        .execute()
+    )
+
+
+def find_first_empty_row(service, spreadsheet_id: str, tab: str, *, start_row: int = 2) -> int:
+    quoted_tab = f"'{tab}'" if " " in tab else tab
+    result = (
+        service.spreadsheets()
+        .values()
+        .get(spreadsheetId=spreadsheet_id, range=f"{quoted_tab}!A{start_row}:A")
+        .execute()
+    )
+    values = result.get("values", [])
+    for idx, row in enumerate(values):
+        if not row or not str(row[0]).strip():
+            return start_row + idx
+    return start_row + len(values)
+
+
 # Column widths (px) for Job Applications tab — keeps long text inside cells with wrap.
 DEFAULT_COLUMN_WIDTHS: dict[int, int] = {
     0: 160,  # A Company Name
@@ -267,21 +347,6 @@ def apply_sheet_layout(
         .batchUpdate(spreadsheetId=spreadsheet_id, body={"requests": requests})
         .execute()
     )
-
-
-def find_first_empty_row(service, spreadsheet_id: str, tab: str, *, start_row: int = 2) -> int:
-    quoted_tab = f"'{tab}'" if " " in tab else tab
-    result = (
-        service.spreadsheets()
-        .values()
-        .get(spreadsheetId=spreadsheet_id, range=f"{quoted_tab}!A{start_row}:A")
-        .execute()
-    )
-    values = result.get("values", [])
-    for idx, row in enumerate(values):
-        if not row or not str(row[0]).strip():
-            return start_row + idx
-    return start_row + len(values)
 
 
 def cmd_auth_login(args: argparse.Namespace) -> int:
@@ -396,6 +461,37 @@ def cmd_format_layout(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_delete_rows(args: argparse.Namespace) -> int:
+    service = sheets_service()
+    rows = parse_row_spec(args.rows)
+    if args.dry_run:
+        preview = read_range(
+            service,
+            args.spreadsheet_id,
+            args.tab,
+            f"A{min(rows)}:B{max(rows)}",
+        )
+        print(json.dumps({"rows_to_delete": rows, "preview": preview}, indent=2))
+        return 0
+
+    delete_sheet_rows(service, args.spreadsheet_id, args.tab, rows)
+    apply_sheet_layout(service, args.spreadsheet_id, args.tab, max_row=args.max_row)
+    next_empty = find_first_empty_row(service, args.spreadsheet_id, args.tab)
+    print(
+        json.dumps(
+            {
+                "deleted_rows": rows,
+                "deleted_count": len(rows),
+                "next_empty_row": next_empty,
+                "format_layout": "applied",
+            },
+            indent=2,
+        )
+    )
+    print(f"OK: deleted {len(rows)} row(s); sheet compacted; next empty row is {next_empty}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Jobgru Google Sheets API writer")
     parser.add_argument("--spreadsheet-id", default=DEFAULT_SPREADSHEET_ID)
@@ -451,6 +547,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Apply wrap formatting through this row (default 500)",
     )
     fmt_p.set_defaults(func=cmd_format_layout)
+
+    del_p = sub.add_parser("delete-rows", help="Delete data rows and compact the sheet")
+    del_p.add_argument("--rows", required=True, help="Row spec: 42 | 42,43 | 42-44 | 42,44-46")
+    del_p.add_argument("--dry-run", action="store_true", help="Preview rows without deleting")
+    del_p.add_argument(
+        "--max-row",
+        type=int,
+        default=500,
+        help="Apply layout formatting through this row after delete",
+    )
+    del_p.set_defaults(func=cmd_delete_rows)
 
     return parser
 

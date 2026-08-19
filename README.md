@@ -34,7 +34,15 @@ This installs:
 - Engine at **`~/.jobgru`**
 - Router skill **`/jobgru`** in Cursor, Claude Code, and Codex skill folders
 - Terminal command **`jobgru`**
-- Playwright MCP for Claude Code / Codex (browser automation)
+- Playwright MCP for Claude Code / Codex (`jobgru mcp install`)
+
+After install:
+
+```bash
+jobgru mcp install          # browser for Claude + Codex (Cursor: built-in)
+cp resume.pdf ~/.jobgru/data/resumes/   # for ATS scoring
+jobgru check
+```
 
 Update after each release: **`jobgru update`** (pulls latest from `main`).
 
@@ -73,11 +81,14 @@ Then: **`Jobgru check`** or `jobgru check`
 | Command | Action |
 | --- | --- |
 | **Jobgru setup** + sheet URL | Agent configures venv, config, resume |
-| **Jobgru help** | Step-by-step instructions |
+| **Jobgru help** | Full command guide (setup, check, mcp, filter, delete, pipeline) |
 | **Jobgru check** | Verify everything is ready |
-| **/jobgru** + job search prompt | Full pipeline |
+| **Jobgru mcp** | Install/check Playwright MCP (Claude + Codex browser) |
+| **Jobgru filter** | Show/save job-search filters; print ready prompt |
+| **Jobgru delete** | Delete sheet rows (42, 42-44, 42,43,44) |
+| **/jobgru** + job search | Full pipeline (jobs → leads → ATS) |
 
-Prompts: [prompts/setup.md](prompts/setup.md) · [help.md](prompts/help.md) · [check.md](prompts/check.md)
+Prompts: [setup.md](prompts/setup.md) · [help.md](prompts/help.md) · [check.md](prompts/check.md) · [filter.md](prompts/filter.md) · [delete.md](prompts/delete.md)
 
 ---
 
@@ -102,8 +113,13 @@ See [AGENTS.md](AGENTS.md) and [docs/SETUP.md](docs/SETUP.md).
 ## Terminal CLI
 
 ```bash
+jobgru help
 jobgru check
 jobgru setup --url "SHEET_URL" --name "Your Name"
+jobgru mcp install
+jobgru filter show
+jobgru filter prompt
+jobgru delete --rows 42-44
 jobgru update
 jobgru uninstall
 ```
@@ -117,7 +133,8 @@ Run **`jobgru check`** first.
 | Problem | Fix |
 | --- | --- |
 | Auth failed | `gcloud auth login --enable-gdrive-access --update-adc` |
-| No browser / no leads | Install Playwright MCP (installer does this) or use Cursor |
+| No browser / LeadGru skipped | `jobgru mcp install` (Claude/Codex) or use Cursor |
+| ATS skipped | Copy resume to `~/.jobgru/data/resumes/` |
 | Wrong sheet | Recopy template; tab = `Job Applications` |
 
 Details: [docs/SETUP.md](docs/SETUP.md)

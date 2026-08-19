@@ -17,6 +17,9 @@ case "$cmd" in
   check)
     exec "$PY" "$SCRIPTS/jobgru_check.py" "$@"
     ;;
+  help|-h|--help)
+    exec "$PY" "$SCRIPTS/jobgru_help.py" "$@"
+    ;;
   setup)
     url="" name="" resume=""
     while [[ $# -gt 0 ]]; do
@@ -45,6 +48,27 @@ print('OK: sheet profile updated (O2, Q2-Q7)')
     fi
     exec "$PY" "$SCRIPTS/jobgru_check.py" "$@"
     ;;
+  mcp)
+    exec "$PY" "$SCRIPTS/jobgru_mcp.py" "$@"
+    ;;
+  filter)
+    exec "$PY" "$SCRIPTS/jobgru_filters.py" "$@"
+    ;;
+  delete)
+    rows=""
+    dry_run=0
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --rows) rows="$2"; shift 2 ;;
+        --dry-run) dry_run=1; shift ;;
+        *) die "Unknown option: $1" ;;
+      esac
+    done
+    [[ -n "$rows" ]] || die "Usage: jobgru delete --rows 42-44   (or 42,43,44 or 42,44-46)"
+    args=(delete-rows --rows "$rows")
+    [[ "$dry_run" -eq 1 ]] && args+=(--dry-run)
+    (cd "$JOBGRU_HOME" && exec "$PY" "$SCRIPTS/sheets_write.py" "${args[@]}")
+    ;;
   update)
     if [[ -d "$JOBGRU_HOME/.git" ]]; then
       git -C "$JOBGRU_HOME" pull --ff-only
@@ -65,17 +89,8 @@ print('OK: sheet profile updated (O2, Q2-Q7)')
     read -r -p "Delete $JOBGRU_HOME? [y/N] " ans
     [[ "$ans" == "y" || "$ans" == "Y" ]] && rm -rf "$JOBGRU_HOME" && echo "Deleted $JOBGRU_HOME"
     ;;
-  ""|help|-h|--help)
-    cat <<EOF
-jobgru — Jobgru job-search pipeline CLI
-
-  jobgru check              Verify setup (same as Jobgru check in chat)
-  jobgru setup --url URL --name NAME [--resume-link URL]
-  jobgru update             Pull latest + refresh router skills
-  jobgru uninstall          Remove global install
-
-Engine: $JOBGRU_HOME
-EOF
+  "")
+    exec "$PY" "$SCRIPTS/jobgru_help.py"
     ;;
   *)
     die "Unknown command: $cmd (try: jobgru help)"

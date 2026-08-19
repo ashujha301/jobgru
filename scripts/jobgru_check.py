@@ -178,17 +178,60 @@ def check_config(report: Report) -> None:
 
 
 def check_browser_tools(report: Report) -> None:
+    from jobgru_mcp import agent_present, playwright_registered, status_payload
+
+    data = status_payload()
+    claude = data["agents"]["claude"]
+    codex = data["agents"]["codex"]
+
+    if claude["present"] and not claude["playwright_registered"]:
+        report.add(
+            CheckResult(
+                id="browser_mcp_claude",
+                status="warn",
+                message="Claude Code: Playwright MCP not registered (LeadGru will skip)",
+                fix="Run: jobgru mcp install",
+                fix_command="jobgru mcp install",
+                readme_anchor="docs/SETUP.md#browser-and-mcp",
+            )
+        )
+    elif claude["present"]:
+        report.add(
+            CheckResult(
+                id="browser_mcp_claude",
+                status="pass",
+                message="Claude Code: Playwright MCP registered",
+            )
+        )
+
+    if codex["present"] and not codex["playwright_registered"]:
+        report.add(
+            CheckResult(
+                id="browser_mcp_codex",
+                status="warn",
+                message="Codex: Playwright MCP not registered (LeadGru will skip)",
+                fix="Run: jobgru mcp install",
+                fix_command="jobgru mcp install",
+                readme_anchor="docs/SETUP.md#browser-and-mcp",
+            )
+        )
+    elif codex["present"]:
+        report.add(
+            CheckResult(
+                id="browser_mcp_codex",
+                status="pass",
+                message="Codex: Playwright MCP registered",
+            )
+        )
+
     report.add(
         CheckResult(
             id="browser_tools",
-            status="warn",
-            message="Agent must verify browser tools (Cursor Browser / Playwright MCP / Chrome DevTools MCP)",
-            fix=(
-                "Cursor: built-in browser. Claude Code: claude mcp add playwright -- npx @playwright/mcp@latest. "
-                "Codex: codex mcp add playwright -- npx @playwright/mcp@latest. "
-                "Without browser tools, only sheet + ATS phases run."
-            ),
-            readme_anchor="docs/SETUP.md#terminal-agents",
+            status="pass",
+            message="Cursor: built-in browser. Claude/Codex: Playwright MCP (jobgru mcp install).",
+            fix="jobgru mcp install — registers Playwright for Claude Code and Codex",
+            fix_command="jobgru mcp install",
+            readme_anchor="docs/SETUP.md#browser-and-mcp",
         )
     )
 

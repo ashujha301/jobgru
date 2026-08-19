@@ -25,6 +25,9 @@ Everything else is handled by this skill.
 | uploads resume PDF, "add resume" | **add-resume** |
 | "Jobgru help" | **help** |
 | "Jobgru check" | **check** |
+| "Jobgru mcp", browser setup, playwright | **mcp** |
+| "Jobgru filter", save/show filters | **filter** |
+| "Jobgru delete", delete rows | **delete** |
 
 If unclear, run **check** first and report what's missing.
 
@@ -32,31 +35,88 @@ If unclear, run **check** first and report what's missing.
 
 ## Help mode
 
-Print this exactly (adapt template URL from `config/sheet.json.example` → `template_sheet_url` if needed):
+Run and print output:
 
+```bash
+.venv/bin/python scripts/jobgru_help.py
 ```
-Jobgru — quick start
-════════════════════
 
-YOU do (2 steps):
-  1. Open template → File → Make a copy → keep tab name "Job Applications"
-     Template: https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit
-  2. Terminal auth (sheet owner Google account):
-     gcloud auth login --enable-gdrive-access --update-adc
+Or terminal: `jobgru help`
 
-AGENT does (say "Jobgru setup" in chat):
-  • Create Python venv + install dependencies
-  • Save your sheet URL to config/sheet.json
-  • Set resume link + name on sheet (O2, Q2–Q7) if you provide them
-  • Save resume PDF to data/resumes/ if you attach one
-  • Run Jobgru check
+Do not paraphrase — show the full command list from the script.
 
-After setup:
-  • Say "Jobgru check" to verify everything
-  • Use prompts/jobgru-run.md for your first job search
+---
 
-Details: README.md | Troubleshooting: docs/SETUP.md
+## MCP mode (browser for Claude Code / Codex)
+
+Check status:
+
+```bash
+.venv/bin/python scripts/jobgru_mcp.py status
 ```
+
+Install Playwright MCP for Claude + Codex:
+
+```bash
+jobgru mcp install
+```
+
+Explain to the user:
+- **Cursor** uses built-in browser — no MCP step.
+- **Claude Code / Codex** need Playwright MCP for LeadGru (LinkedIn people search).
+- Job search can sometimes work via web search without browser; LeadGru always needs a live browser.
+
+---
+
+## Filter mode
+
+Show saved filters:
+
+```bash
+.venv/bin/python scripts/jobgru_filters.py show
+```
+
+Save filters (example):
+
+```bash
+.venv/bin/python scripts/jobgru_filters.py set \
+  --count 3 \
+  --sources "LinkedIn Jobs" \
+  --roles "Software Engineer,SWE AI" \
+  --location "Bangalore" \
+  --exclude-roles "Data Scientist,Data Engineer" \
+  --note "Do not skip similar SWE roles if experience matches"
+```
+
+Print ready job-search prompt:
+
+```bash
+.venv/bin/python scripts/jobgru_filters.py prompt
+```
+
+If user gives filters in chat, parse them into `filter set` flags, save, then show `filter prompt` output for the next pipeline run.
+
+---
+
+## Delete mode
+
+Ask which rows if not provided (single `42`, list `42,43,44`, or range `42-44`).
+
+Preview first:
+
+```bash
+.venv/bin/python scripts/sheets_write.py delete-rows --rows "42-44" --dry-run
+```
+
+After user confirms, delete and compact:
+
+```bash
+.venv/bin/python scripts/sheets_write.py delete-rows --rows "42-44"
+```
+
+Or: `jobgru delete --rows 42-44`
+
+Deleting rows shifts remaining data up — row numbers re-order automatically. Report `next_empty_row` from script output.
 
 ---
 

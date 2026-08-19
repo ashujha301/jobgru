@@ -1,0 +1,18 @@
+{
+  "count": 5,
+  "sources": ["LinkedIn Jobs"],
+  "roles": ["Software Engineer", "SWE AI"],
+  "location": "Bangalore",
+  "remote_restriction": "",
+  "work_arrangement": "any",
+  "experience": "2-5 years",
+  "visa": "irrelevant",
+  "required_skills": [],
+  "excluded_roles": ["Data Scientist", "Data Engineer"],
+  "min_compensation": "",
+  "employment_type": "full-time",
+  "max_posting_age": "2 weeks",
+  "exclude_staffing_agencies": "yes",
+  "ats_scoring": "yes",
+  "note": "Do not skip similar SWE roles if experience matches"
+}

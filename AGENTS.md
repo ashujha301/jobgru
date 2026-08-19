@@ -6,6 +6,9 @@ Portable skills in `.cursor/skills/`. Install globally with [install.sh](install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
+jobgru mcp install
+cp resume.pdf ~/.jobgru/data/resumes/
+jobgru check
 ```
 
 Engine: `~/.jobgru` · Router skills: `~/.cursor/skills/jobgru/`, `~/.claude/skills/jobgru/`, `~/.codex/skills/jobgru/`
@@ -15,8 +18,11 @@ Engine: `~/.jobgru` · Router skills: `~/.cursor/skills/jobgru/`, `~/.claude/ski
 | Command | Action |
 | --- | --- |
 | `Jobgru setup` + sheet URL | [jobgru-setup/SKILL.md](.cursor/skills/jobgru-setup/SKILL.md) |
-| `Jobgru help` | help mode |
-| `Jobgru check` | `jobgru check` or `scripts/jobgru_check.py --json` |
+| `Jobgru help` | Full command list (`jobgru help`) |
+| `Jobgru check` | `jobgru check` |
+| `Jobgru mcp` | Playwright MCP for Claude/Codex |
+| `Jobgru filter` | Saved job-search filters |
+| `Jobgru delete` | Delete sheet rows |
 | Job search | [jobgru/SKILL.md](.cursor/skills/jobgru/SKILL.md) |
 
 ## Manual terminal (user only)
@@ -29,9 +35,9 @@ gcloud auth login --enable-gdrive-access --update-adc
 
 | Agent | Skills | Browser |
 | --- | --- | --- |
-| **Cursor** | Auto-discovers `~/.cursor/skills/jobgru/` | Cursor Browser |
-| **Claude Code** | `~/.claude/skills/jobgru/` | Playwright MCP |
-| **Codex** | `~/.codex/skills/jobgru/` | Playwright MCP |
+| **Cursor** | Auto-discovers `~/.cursor/skills/jobgru/` | Cursor Browser (built-in) |
+| **Claude Code** | `~/.claude/skills/jobgru/` | `jobgru mcp install` → Playwright |
+| **Codex** | `~/.codex/skills/jobgru/` | `jobgru mcp install` → Playwright |
 | **Repo mode** | `.cursor/skills/` in project | Per agent |
 
 ## Skill index
@@ -39,7 +45,7 @@ gcloud auth login --enable-gdrive-access --update-adc
 | Skill | Path |
 | --- | --- |
 | Global router | [skill-global/jobgru/SKILL.md](skill-global/jobgru/SKILL.md) |
-| Setup / help / check | `.cursor/skills/jobgru-setup/SKILL.md` |
+| Setup / help / check / filter / delete / mcp | `.cursor/skills/jobgru-setup/SKILL.md` |
 | Phase 1 | `.cursor/skills/jobgru/SKILL.md` |
 | Phase 2 | `.cursor/skills/leadgru/SKILL.md` |
 | Phase 2b | `.cursor/skills/atsscore/SKILL.md` |
