@@ -53,7 +53,7 @@ AGENT does (say "Jobgru setup" in chat):
 
 After setup:
   • Say "Jobgru check" to verify everything
-  • Use prompts/jobdru-run.md for your first job search
+  • Use prompts/jobgru-run.md for your first job search
 
 Details: README.md | Troubleshooting: docs/SETUP.md
 ```
@@ -160,7 +160,7 @@ Same as setup steps 2–3–5 when user provides a new sheet URL. Do not recreat
 
 - **Never** tell users to open or edit `config/sheet.json` — use `scripts/sheet_config.py set`
 - **Never** use Cursor Browser to edit sheet cells — use `setup_sheet_profile.py` or Sheets API scripts
-- After setup, point user to [prompts/jobdru-run.md](../../prompts/jobdru-run.md) for first pipeline run
+- After setup, point user to [prompts/jobgru-run.md](../../prompts/jobgru-run.md) for first pipeline run
 - Tab name must be **`Job Applications`** (spreadsheet title can be anything)
 
 ---

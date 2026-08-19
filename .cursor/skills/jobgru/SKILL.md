@@ -431,7 +431,7 @@ Set in `data/runs/<YYYY-MM-DD-HHMM>.json` (LeadGru fields added after Phase 2):
 ```json
 {
   "pipeline": {
-    "phase1": "jobdru",
+    "phase1": "jobgru",
     "phase2": "leadgru",
     "status": "phase1_complete"
   },
@@ -496,7 +496,7 @@ Update run JSON:
 
 ```json
 {
-  "pipeline": { "phase1": "jobdru", "phase2": "leadgru", "phase2b": "atsscore", "status": "complete" },
+  "pipeline": { "phase1": "jobgru", "phase2": "leadgru", "phase2b": "atsscore", "status": "complete" },
   "start_row": 22,
   "end_row": 26,
   "leadgru_rows_processed": [22, 23, 24, 25, 26],

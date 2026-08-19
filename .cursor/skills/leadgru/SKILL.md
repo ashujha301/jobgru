@@ -429,7 +429,7 @@ Column widths: F=240px, G=280px, H=300px, O (templates)=300px. Re-run anytime.
 
 ```json
 {
-  "pipeline": { "phase1": "jobdru", "phase2": "leadgru", "status": "complete" },
+  "pipeline": { "phase1": "jobgru", "phase2": "leadgru", "status": "complete" },
   "start_row": 27,
   "end_row": 31,
   "leadgru_rows_processed": [27, 28, 29, 30, 31],
