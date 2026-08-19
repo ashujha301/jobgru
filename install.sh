@@ -112,16 +112,13 @@ register_mcp() {
 
 offer_linkedin_login() {
   [[ "$SKIP_MCP" -eq 1 ]] && return
-  # Only relevant for terminal agents (Cursor uses its own browser)
   command -v claude >/dev/null 2>&1 || command -v codex >/dev/null 2>&1 || return 0
-  command -v npx >/dev/null 2>&1 || { echo "NOTE: Node/npx not found — run 'jobgru mcp login' later for LinkedIn."; return 0; }
-  # curl | bash pipes stdin; read the answer from the terminal directly
   if [[ ! -r /dev/tty ]]; then
     echo "NOTE: Run 'jobgru mcp login' once to sign into LinkedIn (needed for LeadGru)."
     return 0
   fi
   echo ""
-  printf "Sign into LinkedIn now for LeadGru? A browser will open; close it when done. [y/N] "
+  printf "Sign into LinkedIn now for LeadGru? Browser opens; press ENTER in terminal when done. [y/N] "
   local ans=""
   read -r ans < /dev/tty || true
   if [[ "$ans" == "y" || "$ans" == "Y" ]]; then
@@ -136,10 +133,13 @@ install_venv
 install_router_skills
 install_path_command
 register_mcp
-offer_linkedin_login
 
 echo ""
 echo "Jobgru installed to $JOBGRU_HOME"
+echo ""
+
+offer_linkedin_login
+
 echo ""
 echo "Next steps:"
 echo "  1. Copy sheet template → File → Make a copy (tab: Job Applications)"

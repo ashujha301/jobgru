@@ -113,7 +113,7 @@ Then verify: **`Jobgru check`** or `jobgru check` → should show **READY** and 
 
 ### One-time setup (Codex or Claude Code)
 
-**The installer does this for you** — it registers Playwright MCP and asks *"Sign into LinkedIn now?"*. Say **y**, sign in in the browser window that opens, close the window. Done.
+**The installer does this for you** — it registers Playwright MCP and asks *"Sign into LinkedIn now?"*. Say **y**, sign in in the browser, then **press ENTER in the terminal**. Done.
 
 If you skipped it during install, run anytime:
 
@@ -121,7 +121,7 @@ If you skipped it during install, run anytime:
 jobgru mcp login
 ```
 
-A browser opens on LinkedIn login → sign in (MFA ok) → **close the window**. The session is saved in **`~/.jobgru/browser-profile`** and reused by every future run — no re-login unless LinkedIn itself expires it.
+Browser opens → sign in (MFA ok) → **press ENTER in the terminal** (don't close the browser yourself). Session saves to **`~/.jobgru/browser-profile`** and is reused automatically.
 
 **Fallback (in-chat login)** — if the terminal flow doesn't work, start a **new** Codex/Claude session and paste:
 

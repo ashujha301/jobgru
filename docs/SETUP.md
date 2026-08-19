@@ -86,7 +86,7 @@ The installer offers this automatically. To do it manually:
 jobgru mcp login    # opens LinkedIn login in the Jobgru browser profile
 ```
 
-Sign in (MFA ok), then **close the browser window** — session saved to `~/.jobgru/browser-profile`.
+Sign in (MFA ok), then **press ENTER in the terminal** — don't close the browser yourself. Session saves to `~/.jobgru/browser-profile`.
 
 In-chat fallback (new Codex/Claude session):
 

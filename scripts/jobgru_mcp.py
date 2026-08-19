@@ -69,9 +69,9 @@ LeadGru needs a **signed-in LinkedIn** session in Playwright — not public web 
 
 Easiest way (terminal, one time):
   jobgru mcp login
-  → a browser window opens on LinkedIn login
-  → sign in (complete MFA if asked), then close the window
-  → login is saved in {BROWSER_PROFILE} and reused by every future run
+  → browser opens on LinkedIn login
+  → sign in (MFA ok), then press ENTER in the terminal (do not close the browser yourself)
+  → login saved in {BROWSER_PROFILE}
 
 Alternative (inside a Codex/Claude session):
   Paste:
@@ -88,38 +88,14 @@ Cursor users: sign into LinkedIn in Cursor Browser instead — no MCP step.
 
 
 def open_linkedin_login() -> int:
-    """Open LinkedIn login in a Playwright browser using the persistent profile."""
-    if not shutil.which("npx"):
-        print("npx not found — install Node.js first, or use the in-chat login flow:")
-        print(linkedin_login_instructions())
-        return 1
-    BROWSER_PROFILE.mkdir(parents=True, exist_ok=True)
-    print("Opening LinkedIn login in the Jobgru browser profile...")
-    print("Sign in (complete MFA if asked), then CLOSE the browser window to finish.")
-    print(f"Profile: {BROWSER_PROFILE}")
-    cmd = [
-        "npx",
-        "-y",
-        "playwright@latest",
-        "open",
-        "--channel=chrome",
-        "--user-data-dir",
-        str(BROWSER_PROFILE),
-        "https://www.linkedin.com/login",
-    ]
-    result = subprocess.run(cmd)
-    if result.returncode != 0:
-        # Chrome channel missing — retry with bundled chromium
-        cmd.remove("--channel=chrome")
-        result = subprocess.run(cmd)
-    if result.returncode == 0:
-        print("")
-        print("Browser closed. If you signed in, the LinkedIn session is saved.")
-        print("It will be reused automatically — no re-login needed.")
-        return 0
-    print("Could not open the browser. Use the in-chat flow instead:")
-    print(linkedin_login_instructions())
-    return 1
+    """Open LinkedIn login; user presses Enter in terminal when done."""
+    script = Path(__file__).resolve().parent / "jobgru_linkedin_login.py"
+    venv_python = Path.home() / ".jobgru" / ".venv" / "bin" / "python"
+    python = str(venv_python if venv_python.is_file() else Path(sys.executable))
+    # Ensure playwright is installed (added to requirements; may be missing on old venvs)
+    subprocess.run([python, "-m", "pip", "install", "-q", "playwright>=1.49.0"], check=False)
+    result = subprocess.run([python, str(script)])
+    return result.returncode
 
 
 def status_payload() -> dict:
