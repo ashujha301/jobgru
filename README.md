@@ -101,6 +101,58 @@ Then verify: **`Jobgru check`** or `jobgru check` → should show **READY** and 
 
 ---
 
+## LeadGru browser setup (Codex / Claude Code)
+
+**Jobs + ATS can run without this.** LeadGru (LinkedIn contacts) needs a **signed-in LinkedIn** session in a real browser.
+
+| Agent | Browser | Setup |
+| --- | --- | --- |
+| **Cursor** | Cursor Browser (built-in) | Sign into LinkedIn in Cursor before a pipeline run |
+| **Claude Code** | Playwright MCP | Steps below |
+| **Codex** | Playwright MCP | Steps below |
+
+### One-time setup (Codex or Claude Code)
+
+**Terminal:**
+
+```bash
+jobgru mcp install --force
+jobgru mcp login
+```
+
+This registers Playwright with a persistent profile at **`~/.jobgru/browser-profile`** (LinkedIn cookies saved between runs).
+
+**In Codex or Claude Code chat — paste once:**
+
+```text
+Open https://www.linkedin.com/login using Playwright MCP.
+Wait while I sign in manually. Do not continue until I say I'm logged in.
+```
+
+1. A browser window opens  
+2. Sign into LinkedIn (complete MFA if asked)  
+3. Say: **I'm logged in to LinkedIn**
+
+### Backfill leads after a partial run
+
+If jobs were added but LeadGru was skipped:
+
+```text
+LeadGru backfill rows 42-43 — use Playwright MCP with my signed-in LinkedIn session only.
+```
+
+### Why LeadGru sometimes skips
+
+| Phase | Can use web search? | Needs signed-in browser? |
+| --- | --- | --- |
+| Jobgru (find jobs) | Yes | No |
+| ATSScore (resume fit) | N/A (Python) | No |
+| LeadGru (LinkedIn people) | No | **Yes** |
+
+**Cursor users:** no Playwright step — use Cursor Browser and stay logged into LinkedIn.
+
+---
+
 ## Chat commands (any agent, any folder)
 
 | Command | Action |
@@ -141,7 +193,9 @@ See [AGENTS.md](AGENTS.md) and [docs/SETUP.md](docs/SETUP.md).
 jobgru help
 jobgru check
 jobgru setup --url "SHEET_URL" --name "Your Name"
-jobgru mcp install
+jobgru mcp install --force
+jobgru mcp login
+jobgru mcp status
 jobgru filter
 jobgru filters
 jobgru delete --rows 42-44
