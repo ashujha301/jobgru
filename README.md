@@ -13,54 +13,28 @@ Works in **Cursor, Claude Code, Codex**, or any agent — install once, use `/jo
 
 ---
 
-## Install globally (recommended)
+## First-time setup (step by step)
 
-One command — works from any directory:
+Follow these steps in order. Each one builds on the last.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
-```
+### Step 0 — What you need
 
-**Private repo:** you need git access to `github.com/ashujha301/jobgru` (clone auth or make public later).
+- An AI agent: **Cursor**, **Claude Code**, or **Codex CLI**
+- **Google Cloud SDK** — `gcloud` command works in terminal ([install](https://cloud.google.com/sdk/docs/install))
+- A **resume PDF** on your computer (optional but enables ATS scoring)
+- ~10 minutes
 
-Local testing before publish:
+### Step 1 — Copy the Google Sheet template
 
-```bash
-./install.sh --local /path/to/this/repo
-```
+1. Open the template (viewer access is fine — you only copy from it):
 
-This installs:
+   https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit
 
-- Engine at **`~/.jobgru`**
-- Router skill **`/jobgru`** in Cursor, Claude Code, and Codex skill folders
-- Terminal command **`jobgru`**
-- Playwright MCP for Claude Code / Codex (`jobgru mcp install`)
+2. **File → Make a copy**
+3. Tab name must stay **`Job Applications`**
+4. Save **your copy's URL** — you'll use it in Step 4
 
-After install:
-
-```bash
-jobgru mcp install          # browser for Claude + Codex (Cursor: built-in)
-cp resume.pdf ~/.jobgru/data/resumes/   # for ATS scoring
-jobgru check
-```
-
-Update after each release: **`jobgru update`** (pulls latest from `main`).
-
----
-
-## First time? You only do 2 things
-
-### 1. Copy the Google Sheet template
-
-**Step A — Open the template** (viewer access is fine; you only copy from it):
-
-https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit
-
-**Step B — File → Make a copy** → tab must stay **`Job Applications`**
-
-**Step C — Use your copy's URL in Jobgru setup** (not the template URL above).
-
-> **Do not paste the template URL into Jobgru setup.** The template is read-only for everyone except its owner.
+> **Do not paste the template URL into Jobgru setup.** The template is read-only. Always use your own copy.
 
 #### Who can Jobgru write to the sheet?
 
@@ -68,28 +42,15 @@ Jobgru writes through **your Google account** (`gcloud auth login`). That accoun
 
 | Situation | What to do | Jobgru can write? |
 | --- | --- | --- |
-| **Template link** (step A) | Copy only — never use in setup | No |
-| **Your copy** after File → Make a copy | You are **Owner** automatically | **Yes** — no extra sharing step needed |
+| **Template link** (above) | Copy only — never use in setup | No |
+| **Your copy** after File → Make a copy | You are **Owner** automatically | **Yes** |
 | Your copy stays **private** (only you) | Fine — Owner + same `gcloud` account | **Yes** |
 | **Someone else's sheet** shared with you as Viewer | Ask them to share you as **Editor** | No until you're Editor |
-| Team sheet — you run Jobgru | Your Google account must be **Editor** on that sheet | Yes if Editor/Owner |
 | Your copy but **`gcloud auth` is a different account** | Re-auth with the sheet owner account | No |
 
-**You do NOT need** “Anyone with the link → Editor” for normal solo setup. After **Make a copy**, you already own the sheet. Keep it private if you want — just run `gcloud auth login` with that same Google account.
+**You do NOT need** “Anyone with the link → Editor” for normal solo setup. After **Make a copy**, you already own the sheet.
 
-**When sharing settings matter:** only if Jobgru runs under a *different* Google account (teammate's sheet, second email, service account). Then that account must be invited as **Editor** — Viewer/Commenter is not enough.
-
-**Use your copy's URL** in chat or terminal:
-
-```text
-Jobgru setup — I copied the template. My sheet: <YOUR COPY URL>. My name: <YOUR NAME>
-```
-
-```bash
-jobgru setup --url "https://docs.google.com/spreadsheets/d/YOUR_COPY_ID/edit" --name "Your Name"
-```
-
-### 2. Google auth (terminal — once)
+### Step 2 — Google auth (terminal, once)
 
 Sign in with the **same Google account** that owns your copied sheet:
 
@@ -97,33 +58,116 @@ Sign in with the **same Google account** that owns your copied sheet:
 gcloud auth login --enable-gdrive-access --update-adc
 ```
 
-Then verify: **`Jobgru check`** or `jobgru check` → should show **READY** and `sheet_write: OK`.
+### Step 3 — Install Jobgru (terminal)
 
----
+One command — works from any directory:
 
-## LeadGru browser setup (Codex / Claude Code)
+```bash
+curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
+```
 
-**Jobs + ATS can run without this.** LeadGru (LinkedIn contacts) needs a **signed-in LinkedIn** session in a real browser.
+**Private repo:** you need git access to `github.com/ashujha301/jobgru`.
 
-| Agent | Browser | Setup |
-| --- | --- | --- |
-| **Cursor** | Cursor Browser (built-in) | Sign into LinkedIn in Cursor before a pipeline run |
-| **Claude Code** | Playwright MCP | Steps below |
-| **Codex** | Playwright MCP | Steps below |
+This installs:
 
-### One-time setup (Codex or Claude Code)
+- Engine at **`~/.jobgru`**
+- Router skill **`/jobgru`** in Cursor, Claude Code, and Codex
+- Terminal command **`jobgru`**
+- Playwright MCP for Claude Code and Codex (LeadGru browser)
 
-**The installer does this for you** — it registers Playwright MCP and asks *"Sign into LinkedIn now?"*. Say **y**, sign in in the browser, then **press ENTER in the terminal**. Done.
+When the installer asks **"Sign into LinkedIn now?"** → type **`y`**
 
-If you skipped it during install, run anytime:
+- Browser opens → sign into LinkedIn (MFA ok)
+- **Press ENTER in the terminal** when done (don't close the browser yourself)
+
+If you skipped LinkedIn during install, run anytime:
 
 ```bash
 jobgru mcp login
 ```
 
-Browser opens → sign in (MFA ok) → **press ENTER in the terminal** (don't close the browser yourself). Session saves to **`~/.jobgru/browser-profile`** and is reused automatically.
+Session saves to **`~/.jobgru/browser-profile`** and is reused automatically.
 
-**Fallback (in-chat login)** — if the terminal flow doesn't work, start a **new** Codex/Claude session and paste:
+Update after each release: **`jobgru update`**
+
+### Step 4 — Connect your sheet (terminal)
+
+Replace with your copy URL and name:
+
+```bash
+jobgru setup --url "https://docs.google.com/spreadsheets/d/YOUR_COPY_ID/edit" --name "Your Name"
+```
+
+Or in chat:
+
+```text
+Jobgru setup — I copied the template. My sheet: <YOUR COPY URL>. My name: <YOUR NAME>
+```
+
+### Step 5 — Add your resume (optional, for ATS scoring)
+
+Terminal:
+
+```bash
+mkdir -p ~/.jobgru/data/resumes
+cp /path/to/your/resume.pdf ~/.jobgru/data/resumes/
+```
+
+Or attach the PDF in chat and say:
+
+```text
+Jobgru add resume
+```
+
+### Step 6 — Health check (terminal)
+
+```bash
+jobgru check
+```
+
+You want **`READY`** at the end.
+
+| Check | Expected |
+| --- | --- |
+| `sheet_write` | OK |
+| `sheet_formulas` | OK |
+| `resume` | OK (after Step 5) or warn if skipped |
+| browser / MCP | registered for Codex / Claude Code |
+
+If anything fails, fix what `jobgru check` tells you before running a job search.
+
+### Step 7 — Run your first job search
+
+**Codex / Claude Code:** start a **new session** after install — MCP tools load only at session start.
+
+Simple test prompt:
+
+```text
+Find 3 software engineer jobs on LinkedIn in Bangalore. Add them to my Job Applications sheet.
+```
+
+Or open [prompts/jobgru-run.md](prompts/jobgru-run.md), fill your filters, and paste into chat.
+
+### Step 8 — What a successful run looks like
+
+- New rows in your **Job Applications** Google Sheet
+- **ATSScore** filled (columns I & J) if resume is present
+- **LeadGru** filled (Leads column) if LinkedIn login worked
+- Run record saved at `~/.jobgru/data/runs/`
+
+---
+
+## Browser setup by agent
+
+| Agent | Browser for LeadGru | Setup |
+| --- | --- | --- |
+| **Cursor** | Cursor Browser (built-in) | Sign into LinkedIn in Cursor before a pipeline run |
+| **Claude Code** | Playwright MCP | Step 3 above (`jobgru mcp login`) |
+| **Codex** | Playwright MCP | Step 3 above (`jobgru mcp login`) |
+
+**Jobs + ATS run without LinkedIn login.** Only LeadGru (LinkedIn contacts) needs a signed-in session.
+
+**Fallback (in-chat login)** — if `jobgru mcp login` doesn't work, start a **new** Codex/Claude session and paste:
 
 ```text
 Use the playwright MCP tool browser_navigate to open https://www.linkedin.com/login — do not use any built-in browser skill.
@@ -132,7 +176,7 @@ Wait while I sign in manually. Do not continue until I say I'm logged in.
 
 Sign in, then say: **I'm logged in to LinkedIn**
 
-> Notes: register the MCP **before** starting a Codex/Claude session (tools load at session start — restart the session if the agent says "no browser available"). Only **one** agent can use the browser profile at a time — don't run Codex and Claude LinkedIn tasks simultaneously.
+> Register MCP **before** starting a Codex/Claude session. Only **one** agent can use the browser profile at a time.
 
 ### Backfill leads after a partial run
 
@@ -149,8 +193,6 @@ LeadGru backfill rows 42-43 — use Playwright MCP with my signed-in LinkedIn se
 | Jobgru (find jobs) | Yes | No |
 | ATSScore (resume fit) | N/A (Python) | No |
 | LeadGru (LinkedIn people) | No | **Yes** |
-
-**Cursor users:** no Playwright step — use Cursor Browser and stay logged into LinkedIn.
 
 ---
 
@@ -170,13 +212,19 @@ Prompts: [setup.md](prompts/setup.md) · [help.md](prompts/help.md) · [check.md
 
 ---
 
-## Run your first job search
+## Quick reference — terminal commands
 
-When check shows **READY**:
-
-1. Sign into **LinkedIn** in the agent browser
-2. Open [prompts/jobgru-run.md](prompts/jobgru-run.md), fill filters, paste into chat
-3. Wait ~45–180 min for new sheet rows
+```bash
+jobgru help          # all commands
+jobgru check         # is everything ready?
+jobgru setup --url "SHEET_URL" --name "Your Name"
+jobgru mcp status    # is Playwright MCP registered?
+jobgru mcp login     # sign into LinkedIn again
+jobgru filter        # see filter types for prompts
+jobgru delete --rows 42-44   # delete test rows
+jobgru update        # pull latest from main
+jobgru uninstall     # remove global install
+```
 
 ---
 
@@ -184,25 +232,13 @@ When check shows **READY**:
 
 Clone this repo and open in an agent. Skills live in `.cursor/skills/`. Same chat commands work; engine uses repo root instead of `~/.jobgru`.
 
-See [AGENTS.md](AGENTS.md) and [docs/SETUP.md](docs/SETUP.md).
-
----
-
-## Terminal CLI
+Local install from a clone:
 
 ```bash
-jobgru help
-jobgru check
-jobgru setup --url "SHEET_URL" --name "Your Name"
-jobgru mcp install --force
-jobgru mcp login
-jobgru mcp status
-jobgru filter
-jobgru filters
-jobgru delete --rows 42-44
-jobgru update
-jobgru uninstall
+./install.sh --local /path/to/this/repo
 ```
+
+See [AGENTS.md](AGENTS.md) and [docs/SETUP.md](docs/SETUP.md).
 
 ---
 
