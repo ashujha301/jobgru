@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Jobgru CLI — global install wrapper
+set -euo pipefail
+
+JOBGRU_HOME="${JOBGRU_HOME:-$HOME/.jobgru}"
+PY="${JOBGRU_HOME}/.venv/bin/python"
+SCRIPTS="${JOBGRU_HOME}/scripts"
+
+die() { echo "jobgru: $*" >&2; exit 1; }
+
+[[ -d "$JOBGRU_HOME" ]] || die "Not installed. Run: curl -fsSL .../install.sh | bash"
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+  check)
+    exec "$PY" "$SCRIPTS/jobgru_check.py" "$@"
+    ;;
+  setup)
+    url="" name="" resume=""
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --url) url="$2"; shift 2 ;;
+        --name) name="$2"; shift 2 ;;
+        --resume-link) resume="$2"; shift 2 ;;
+        *) die "Unknown option: $1" ;;
+      esac
+    done
+    [[ -n "$url" ]] || die "Usage: jobgru setup --url SHEET_URL --name YOUR_NAME [--resume-link URL]"
+    args=(set --url "$url")
+    [[ -n "$name" ]] && args+=(--name "$name")
+    [[ -n "$resume" ]] && args+=(--resume-link "$resume")
+    (cd "$JOBGRU_HOME" && "$PY" "$SCRIPTS/sheet_config.py" "${args[@]}")
+    if [[ -n "$name" || -n "$resume" ]]; then
+      (cd "$JOBGRU_HOME" && "$PY" -c "
+from setup_sheet_profile import apply_user_profile
+from sheet_config import get_spreadsheet_id, get_tab, get_resume_link_default, get_your_name
+from sheets_write import sheets_service
+svc = sheets_service()
+apply_user_profile(svc, get_spreadsheet_id(), get_tab(),
+    resume_link=get_resume_link_default(), your_name=get_your_name())
+print('OK: sheet profile updated (O2, Q2-Q7)')
+" 2>/dev/null) || echo "NOTE: Sheet profile write skipped (run gcloud auth first)"
+    fi
+    exec "$PY" "$SCRIPTS/jobgru_check.py" "$@"
+    ;;
+  update)
+    if [[ -d "$JOBGRU_HOME/.git" ]]; then
+      git -C "$JOBGRU_HOME" pull --ff-only
+    fi
+    "$PY" -m pip install -q -r "$SCRIPTS/requirements.txt"
+    for dir in "$HOME/.cursor/skills/jobgru" "$HOME/.claude/skills/jobgru" "$HOME/.codex/skills/jobgru"; do
+      if [[ -d "$(dirname "$dir")" ]]; then
+        mkdir -p "$dir"
+        cp "$JOBGRU_HOME/skill-global/jobgru/SKILL.md" "$dir/SKILL.md"
+      fi
+    done
+    echo "OK: Jobgru updated"
+    ;;
+  uninstall)
+    rm -f "$HOME/.local/bin/jobgru"
+    rm -rf "$HOME/.cursor/skills/jobgru" "$HOME/.claude/skills/jobgru" "$HOME/.codex/skills/jobgru"
+    echo "Removed router skills and PATH symlink."
+    read -r -p "Delete $JOBGRU_HOME? [y/N] " ans
+    [[ "$ans" == "y" || "$ans" == "Y" ]] && rm -rf "$JOBGRU_HOME" && echo "Deleted $JOBGRU_HOME"
+    ;;
+  ""|help|-h|--help)
+    cat <<EOF
+jobgru — Jobgru job-search pipeline CLI
+
+  jobgru check              Verify setup (same as Jobgru check in chat)
+  jobgru setup --url URL --name NAME [--resume-link URL]
+  jobgru update             Pull latest + refresh router skills
+  jobgru uninstall          Remove global install
+
+Engine: $JOBGRU_HOME
+EOF
+    ;;
+  *)
+    die "Unknown command: $cmd (try: jobgru help)"
+    ;;
+esac

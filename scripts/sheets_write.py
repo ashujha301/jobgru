@@ -1,0 +1,465 @@
+#!/usr/bin/env python3
+"""Write to the Job Applications Google Sheet via Sheets API.
+
+Google blocks gcloud's default OAuth client for the spreadsheets scope.
+Use one of these auth paths (first match wins):
+
+  1. GOOGLE_ACCESS_TOKEN env var
+  2. GOOGLE_APPLICATION_CREDENTIALS (service account JSON; share sheet with SA email)
+  3. scripts/.sheets-token.json (from: sheets_write.py auth login)
+  4. Application Default Credentials (often blocked for spreadsheets — avoid)
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+from googleapiclient.discovery import build
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+DEFAULT_TOKEN_PATH = SCRIPT_DIR / ".sheets-token.json"
+DEFAULT_CLIENT_SECRETS = SCRIPT_DIR / "oauth-client.json"
+
+from sheet_config import get_spreadsheet_id, get_tab  # noqa: E402
+
+DEFAULT_SPREADSHEET_ID = get_spreadsheet_id()
+DEFAULT_TAB = get_tab()
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+
+
+def _resolve_client_secrets(explicit: str | None) -> Path:
+    if explicit:
+        path = Path(explicit).expanduser()
+    else:
+        env = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRETS")
+        path = Path(env).expanduser() if env else DEFAULT_CLIENT_SECRETS
+    if not path.is_file():
+        raise SystemExit(
+            f"OAuth client secrets not found at {path}.\n"
+            "Create a Desktop OAuth client in Google Cloud Console, enable Sheets API,\n"
+            "download JSON, and save it as scripts/oauth-client.json\n"
+            "See scripts/SHEETS-API-SETUP.md for step-by-step instructions."
+        )
+    return path
+
+
+def _load_user_token(token_path: Path) -> Credentials | None:
+    if not token_path.is_file():
+        return None
+    creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        token_path.write_text(creds.to_json())
+    return creds
+
+
+def get_credentials() -> Credentials:
+    token = os.environ.get("GOOGLE_ACCESS_TOKEN")
+    if token:
+        return Credentials(token=token, scopes=SCOPES)
+
+    sa_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if sa_path and Path(sa_path).is_file():
+        return ServiceAccountCredentials.from_service_account_file(sa_path, scopes=SCOPES)
+
+    token_path = Path(os.environ.get("SHEETS_TOKEN_PATH", DEFAULT_TOKEN_PATH))
+    creds = _load_user_token(token_path)
+    if creds and creds.valid:
+        return creds
+
+    try:
+        from google.auth import default
+
+        adc, _ = default(scopes=SCOPES)
+        if hasattr(adc, "refresh") and not adc.valid:
+            adc.refresh(Request())
+        return adc
+    except Exception as exc:
+        raise SystemExit(
+            "Google Sheets auth failed.\n\n"
+            "gcloud's default OAuth client is blocked for spreadsheets scope.\n"
+            "Fix (pick one):\n"
+            "  A) OAuth desktop client (recommended):\n"
+            "     1. Follow scripts/SHEETS-API-SETUP.md\n"
+            "     2. Save client JSON as scripts/oauth-client.json\n"
+            "     3. Run: .venv/bin/python scripts/sheets_write.py auth login\n"
+            "  B) Service account:\n"
+            "     1. Create SA key JSON, set GOOGLE_APPLICATION_CREDENTIALS\n"
+            "     2. Share the sheet with the SA email as Editor\n\n"
+            f"Original error: {exc}"
+        ) from exc
+
+
+def sheets_service():
+    return build("sheets", "v4", credentials=get_credentials(), cache_discovery=False)
+
+
+def read_range(service, spreadsheet_id: str, tab: str, cell_range: str) -> list[list[str]]:
+    quoted_tab = f"'{tab}'" if " " in tab else tab
+    result = (
+        service.spreadsheets()
+        .values()
+        .get(spreadsheetId=spreadsheet_id, range=f"{quoted_tab}!{cell_range}")
+        .execute()
+    )
+    return result.get("values", [])
+
+
+def write_range(
+    service,
+    spreadsheet_id: str,
+    tab: str,
+    cell_range: str,
+    values: list[list[str]],
+    *,
+    value_input_option: str = "USER_ENTERED",
+) -> dict:
+    quoted_tab = f"'{tab}'" if " " in tab else tab
+    body = {"values": values}
+    return (
+        service.spreadsheets()
+        .values()
+        .update(
+            spreadsheetId=spreadsheet_id,
+            range=f"{quoted_tab}!{cell_range}",
+            valueInputOption=value_input_option,
+            body=body,
+        )
+        .execute()
+    )
+
+
+def append_rows(
+    service,
+    spreadsheet_id: str,
+    tab: str,
+    rows: list[list[str]],
+    *,
+    value_input_option: str = "USER_ENTERED",
+) -> dict:
+    quoted_tab = f"'{tab}'" if " " in tab else tab
+    body = {"values": rows}
+    return (
+        service.spreadsheets()
+        .values()
+        .append(
+            spreadsheetId=spreadsheet_id,
+            range=f"{quoted_tab}!A:H",
+            valueInputOption=value_input_option,
+            insertDataOption="INSERT_ROWS",
+            body=body,
+        )
+        .execute()
+    )
+
+
+def get_sheet_id(service, spreadsheet_id: str, tab: str) -> int:
+    meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    for sheet in meta.get("sheets", []):
+        if sheet["properties"]["title"] == tab:
+            return sheet["properties"]["sheetId"]
+    raise SystemExit(f"Tab not found: {tab!r}")
+
+
+# Column widths (px) for Job Applications tab — keeps long text inside cells with wrap.
+DEFAULT_COLUMN_WIDTHS: dict[int, int] = {
+    0: 160,  # A Company Name
+    1: 140,  # B Position
+    2: 200,  # C Apply link
+    3: 95,  # D Status
+    4: 95,  # E Date Applied
+    5: 240,  # F Details if any
+    6: 280,  # G Leads
+    7: 300,  # H Add note Message
+    8: 140,  # I ATS score
+    9: 300,  # J Suggestions on Resume
+    11: 120,  # L Summary (was J before I/J insert)
+    12: 70,  # M Count (was K)
+    14: 140,  # O Latest Resume (was M)
+    16: 300,  # Q Add Note Template (was O)
+}
+
+
+def apply_sheet_layout(
+    service,
+    spreadsheet_id: str,
+    tab: str,
+    *,
+    wrap_columns: tuple[int, ...] = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 14, 16),
+    max_row: int = 500,
+) -> dict:
+    """Wrap text, top-align, and set column widths so cells do not overflow visually."""
+    sheet_id = get_sheet_id(service, spreadsheet_id, tab)
+    requests: list[dict] = []
+
+    for col_index, pixel_size in DEFAULT_COLUMN_WIDTHS.items():
+        requests.append(
+            {
+                "updateDimensionProperties": {
+                    "range": {
+                        "sheetId": sheet_id,
+                        "dimension": "COLUMNS",
+                        "startIndex": col_index,
+                        "endIndex": col_index + 1,
+                    },
+                    "properties": {"pixelSize": pixel_size},
+                    "fields": "pixelSize",
+                }
+            }
+        )
+
+    for col_index in wrap_columns:
+        requests.append(
+            {
+                "repeatCell": {
+                    "range": {
+                        "sheetId": sheet_id,
+                        "startRowIndex": 0,
+                        "endRowIndex": max_row,
+                        "startColumnIndex": col_index,
+                        "endColumnIndex": col_index + 1,
+                    },
+                    "cell": {
+                        "userEnteredFormat": {
+                            "wrapStrategy": "WRAP",
+                            "verticalAlignment": "TOP",
+                        }
+                    },
+                    "fields": "userEnteredFormat(wrapStrategy,verticalAlignment)",
+                }
+            }
+        )
+
+    requests.append(
+        {
+            "updateSheetProperties": {
+                "properties": {
+                    "sheetId": sheet_id,
+                    "gridProperties": {"frozenRowCount": 1},
+                },
+                "fields": "gridProperties.frozenRowCount",
+            }
+        }
+    )
+
+    requests.append(
+        {
+            "autoResizeDimensions": {
+                "dimensions": {
+                    "sheetId": sheet_id,
+                    "dimension": "ROWS",
+                    "startIndex": 1,
+                    "endIndex": max_row,
+                }
+            }
+        }
+    )
+
+    return (
+        service.spreadsheets()
+        .batchUpdate(spreadsheetId=spreadsheet_id, body={"requests": requests})
+        .execute()
+    )
+
+
+def find_first_empty_row(service, spreadsheet_id: str, tab: str, *, start_row: int = 2) -> int:
+    quoted_tab = f"'{tab}'" if " " in tab else tab
+    result = (
+        service.spreadsheets()
+        .values()
+        .get(spreadsheetId=spreadsheet_id, range=f"{quoted_tab}!A{start_row}:A")
+        .execute()
+    )
+    values = result.get("values", [])
+    for idx, row in enumerate(values):
+        if not row or not str(row[0]).strip():
+            return start_row + idx
+    return start_row + len(values)
+
+
+def cmd_auth_login(args: argparse.Namespace) -> int:
+    from google_auth_oauthlib.flow import InstalledAppFlow
+
+    client_secrets = _resolve_client_secrets(args.client_secrets)
+    token_path = Path(args.token_path)
+
+    flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
+    creds = flow.run_local_server(port=0, open_browser=True)
+    token_path.write_text(creds.to_json())
+    print(f"Saved token to {token_path}")
+    print("Run: .venv/bin/python scripts/sheets_write.py test --cleanup")
+    return 0
+
+
+def cmd_auth_status(args: argparse.Namespace) -> int:
+    token_path = Path(args.token_path)
+    if not token_path.is_file():
+        print(f"No token at {token_path}")
+        return 1
+    creds = _load_user_token(token_path)
+    if creds and creds.valid:
+        print(f"Token valid at {token_path}")
+        return 0
+    print(f"Token expired or invalid at {token_path}; run auth login")
+    return 1
+
+
+def cmd_read(args: argparse.Namespace) -> int:
+    service = sheets_service()
+    values = read_range(service, args.spreadsheet_id, args.tab, args.range)
+    print(json.dumps(values, indent=2))
+    return 0
+
+
+def cmd_write(args: argparse.Namespace) -> int:
+    service = sheets_service()
+    if args.json:
+        values = json.loads(args.json)
+    elif args.value is not None:
+        values = [[args.value]]
+    else:
+        raise SystemExit("Provide --value or --json")
+
+    result = write_range(service, args.spreadsheet_id, args.tab, args.range, values)
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+def cmd_append(args: argparse.Namespace) -> int:
+    service = sheets_service()
+    rows = json.loads(Path(args.file).read_text())
+    if not isinstance(rows, list):
+        raise SystemExit("--file must contain a JSON array of row arrays")
+
+    if args.start_row:
+        end_row = args.start_row + len(rows) - 1
+        result = write_range(
+            service,
+            args.spreadsheet_id,
+            args.tab,
+            f"A{args.start_row}:H{end_row}",
+            rows,
+        )
+    else:
+        result = append_rows(service, args.spreadsheet_id, args.tab, rows)
+
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+def cmd_test(args: argparse.Namespace) -> int:
+    service = sheets_service()
+    test_value = args.value
+    cell = args.range
+
+    print(f"Writing {test_value!r} to {args.tab}!{cell} ...")
+    write_range(service, args.spreadsheet_id, args.tab, cell, [[test_value]])
+
+    read_back = read_range(service, args.spreadsheet_id, args.tab, cell)
+    print("Read back:", json.dumps(read_back, indent=2))
+
+    if not read_back or read_back[0][0] != test_value:
+        print("FAIL: value did not persist", file=sys.stderr)
+        return 1
+
+    print("OK: Sheets API write verified")
+    if args.cleanup:
+        write_range(service, args.spreadsheet_id, args.tab, cell, [[""]])
+        print("Cleaned up test cell")
+    return 0
+
+
+def cmd_first_empty(args: argparse.Namespace) -> int:
+    service = sheets_service()
+    row = find_first_empty_row(service, args.spreadsheet_id, args.tab, start_row=args.start_row)
+    print(row)
+    return 0
+
+
+def cmd_format_layout(args: argparse.Namespace) -> int:
+    service = sheets_service()
+    result = apply_sheet_layout(
+        service,
+        args.spreadsheet_id,
+        args.tab,
+        max_row=args.max_row,
+    )
+    print(json.dumps(result, indent=2))
+    print("OK: wrap text, column widths, frozen header, row auto-resize applied")
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Jobgru Google Sheets API writer")
+    parser.add_argument("--spreadsheet-id", default=DEFAULT_SPREADSHEET_ID)
+    parser.add_argument("--tab", default=DEFAULT_TAB)
+
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    auth = sub.add_parser("auth", help="OAuth login (own client, not gcloud default)")
+    auth_sub = auth.add_subparsers(dest="auth_command", required=True)
+
+    login_p = auth_sub.add_parser("login", help="Browser login; saves scripts/.sheets-token.json")
+    login_p.add_argument("--client-secrets", help="Path to OAuth desktop client JSON")
+    login_p.add_argument("--token-path", default=str(DEFAULT_TOKEN_PATH))
+    login_p.set_defaults(func=cmd_auth_login)
+
+    status_p = auth_sub.add_parser("status", help="Check saved OAuth token")
+    status_p.add_argument("--token-path", default=str(DEFAULT_TOKEN_PATH))
+    status_p.set_defaults(func=cmd_auth_status)
+
+    read_p = sub.add_parser("read", help="Read a range")
+    read_p.add_argument("--range", required=True, help="e.g. A21:E22")
+    read_p.set_defaults(func=cmd_read)
+
+    write_p = sub.add_parser("write", help="Write to a range")
+    write_p.add_argument("--range", required=True, help="e.g. A22 or A22:G22")
+    write_p.add_argument("--value", help="Single cell value")
+    write_p.add_argument("--json", help='2D JSON array, e.g. \'[["a","b"]]\'')
+    write_p.set_defaults(func=cmd_write)
+
+    append_p = sub.add_parser("append", help="Append rows from JSON file")
+    append_p.add_argument("--file", required=True, help="JSON file: array of [A..H] rows")
+    append_p.add_argument("--start-row", type=int, help="Write at fixed row instead of append")
+    append_p.set_defaults(func=cmd_append)
+
+    test_p = sub.add_parser("test", help="Smoke test: write, read back, optional cleanup")
+    test_p.add_argument("--range", default="A22")
+    test_p.add_argument("--value", default="SHEETS_API_TEST")
+    test_p.add_argument("--cleanup", action="store_true", help="Clear cell after verify")
+    test_p.set_defaults(func=cmd_test)
+
+    empty_p = sub.add_parser("first-empty", help="Print first empty row in column A")
+    empty_p.add_argument("--start-row", type=int, default=2)
+    empty_p.set_defaults(func=cmd_first_empty)
+
+    fmt_p = sub.add_parser(
+        "format-layout",
+        help="Wrap text + column widths so Details/Leads/Add note/Template cells do not overflow",
+    )
+    fmt_p.add_argument(
+        "--max-row",
+        type=int,
+        default=500,
+        help="Apply wrap formatting through this row (default 500)",
+    )
+    fmt_p.set_defaults(func=cmd_format_layout)
+
+    return parser
+
+
+def main() -> int:
+    parser = build_parser()
+    args = parser.parse_args()
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

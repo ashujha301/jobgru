@@ -1,0 +1,37 @@
+name: Validate Jobgru installer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Shellcheck
+        run: shellcheck install.sh bin/jobgru
+
+      - name: Python compile
+        run: python3 -m py_compile scripts/*.py
+
+      - name: Installer smoke test
+        run: |
+          chmod +x install.sh bin/jobgru
+          ./install.sh --local . --skip-mcp
+          ~/.jobgru/.venv/bin/python ~/.jobgru/scripts/jobgru_check.py --json | tee check.json
+          python3 -c "
+          import json, sys
+          d = json.load(open('check.json'))
+          assert 'checks' in d and len(d['checks']) >= 5
+          ids = {c['id'] for c in d['checks']}
+          for req in ('python', 'venv', 'deps', 'install_mode'):
+              assert req in ids, f'missing {req}'
+          print('OK: installer smoke test passed')
+          "

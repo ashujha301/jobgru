@@ -1,0 +1,43 @@
+{
+  "board": "LinkedIn Jobs",
+  "board_id": "linkedin-jobs",
+  "status": "active",
+  "discovered_at": "2026-08-19",
+  "last_ok": "2026-08-19",
+  "min_links": 3,
+  "verify": "webfetch_listing",
+  "search_urls": [
+    "https://www.linkedin.com/jobs/search/?keywords={KEYWORD}&location=India&f_WT=2%2C3&f_E=2%2C3&f_TPR=r2592000&sortBy=DD",
+    "https://www.linkedin.com/jobs/search/?keywords={KEYWORD}&location=Bangalore&f_WT=2%2C3&f_E=2%2C3&f_TPR=r2592000&sortBy=DD",
+    "https://www.linkedin.com/jobs/search/?keywords={KEYWORD}&location=Bengaluru&f_WT=2%2C3&f_E=2%2C3&f_TPR=r2592000&sortBy=DD"
+  ],
+  "keyword_groups": [
+    "Backend Engineer AI",
+    "Software Engineer Backend",
+    "Software Engineer AI ML",
+    "Backend AI Engineer"
+  ],
+  "fallback_urls": [
+    "https://www.linkedin.com/jobs/search/?keywords={KEYWORD}&location=India&f_WT=2&f_E=2%2C3&f_TPR=r2592000&sortBy=DD",
+    "https://www.linkedin.com/jobs/search/?keywords={KEYWORD}&location=India&f_TPR=r2592000&sortBy=DD"
+  ],
+  "extract_js": "Array.from(document.querySelectorAll('a[href*=\"/jobs/view/\"]')).map(a => ({ href: a.href.split('?')[0], title: (a.closest('.job-card-list__title') || a.closest('.base-card') || a).innerText?.slice(0, 120) || '' })).filter(x => x.href.includes('/jobs/view/')).reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, []).slice(0, 20)",
+  "link_pattern": "/jobs/view/",
+  "param_reference": {
+    "f_WT": "2 = Remote, 3 = Hybrid; use 2,3 for both",
+    "f_E": "2 = Associate, 3 = Mid-Senior; use 2,3 for 1-3 yr range",
+    "f_TPR": "r2592000 = past 30 days",
+    "sortBy": "DD = most recent"
+  },
+  "rules": [
+    "Substitute {KEYWORD} from prompt role filters — one search_urls entry per keyword group (max 3-4 per run)",
+    "First search IS the health check — if links < min_links, run failure ladder",
+    "Verify finalists with WebFetch OR browser listing page — never both on same URL",
+    "WebSearch site:linkedin.com/jobs only if all search_urls yield < 3 total candidates",
+    "Do not repeat the same search URL twice in one pass"
+  ],
+  "notes": [
+    "Proven Aug 2026 Pass 2 (rows 27-31)",
+    "Requires LinkedIn login in Cursor Browser for search pages"
+  ]
+}

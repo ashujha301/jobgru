@@ -1,0 +1,9 @@
+{
+  "spreadsheet_id": "PASTE_YOUR_SPREADSHEET_ID_HERE",
+  "tab": "Job Applications",
+  "sheet_url": "https://docs.google.com/spreadsheets/d/PASTE_YOUR_SPREADSHEET_ID_HERE/edit",
+  "template_sheet_url": "https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit",
+  "resume_link": "https://example.com/your-resume",
+  "your_name": "Your Name",
+  "_comment": "Created automatically by Jobgru setup — do not edit manually unless needed."
+}

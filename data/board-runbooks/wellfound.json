@@ -1,0 +1,38 @@
+{
+  "board": "Wellfound",
+  "board_id": "wellfound",
+  "status": "active",
+  "discovered_at": "2026-08-19",
+  "last_ok": "2026-08-19",
+  "min_links": 3,
+  "verify": "webfetch_listing",
+  "search_urls": [
+    "https://wellfound.com/role/l/ai-engineer/india",
+    "https://wellfound.com/role/l/machine-learning-engineer/india",
+    "https://wellfound.com/jobs?locations=India&remote=true&role=ai-engineer"
+  ],
+  "role_slug_map": {
+    "AI Engineer": "ai-engineer",
+    "ML Engineer": "machine-learning-engineer",
+    "Applied AI Engineer": "ai-engineer",
+    "GenAI Engineer": "ai-engineer",
+    "Software Engineer AI/ML": "ai-engineer"
+  },
+  "fallback_urls": [
+    "https://wellfound.com/jobs?locations=India&remote=true&query={KEYWORD}"
+  ],
+  "company_jobs_pattern": "https://wellfound.com/company/{slug}/jobs",
+  "extract_js": "Array.from(document.querySelectorAll('a[href*=\"/jobs/\"]')).map(a => ({ href: a.href.split('?')[0], title: a.innerText?.slice(0, 120) || '' })).filter(x => /\\/jobs\\/\\d+-/.test(x.href)).reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, []).slice(0, 20)",
+  "link_pattern": "/jobs/{id}-",
+  "rules": [
+    "Prefer /role/l/{slug}/india landing pages over generic /jobs",
+    "Do NOT navigate to bare wellfound.com/jobs (no filters)",
+    "Do NOT run site:wellfound.com WebSearch loops — use search_urls + company deep-dive",
+    "Company deep-dive when search thin: /company/{slug}/jobs",
+    "Verify finalists with WebFetch only"
+  ],
+  "notes": [
+    "Proven Aug 2026 Pass 1 (rows 22-26)",
+    "WebFetch works when browser MCP unavailable"
+  ]
+}

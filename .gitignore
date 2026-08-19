@@ -1,0 +1,14 @@
+# Ignore local run data and secrets
+data/runs/*.json
+data/resumes/*.pdf
+config/sheet.json
+.env
+*.credentials.json
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+scripts/.sheets-token.json
+scripts/oauth-client.json
+scripts/client_secret*.json
+scripts/*-service-account*.json
