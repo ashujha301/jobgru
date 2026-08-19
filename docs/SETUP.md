@@ -76,7 +76,29 @@ codex mcp add playwright -- npx @playwright/mcp@latest
 
 [install.sh](../install.sh) runs `jobgru mcp install` automatically when `claude` / `codex` CLIs are on PATH.
 
-**Why LeadGru skipped but jobs worked:** Jobgru can find listings via web search without a browser. LeadGru searches LinkedIn *people* and requires a live browser (Playwright MCP in Claude/Codex, Cursor Browser in Cursor).
+**Why LeadGru skipped but jobs worked:** Jobgru can find listings via public web search without a browser. LeadGru searches LinkedIn *people* and requires a **signed-in** Playwright browser session.
+
+### LinkedIn login for LeadGru (Codex / Claude Code — one time)
+
+```bash
+jobgru mcp install --force    # persistent profile at ~/.jobgru/browser-profile
+jobgru mcp login              # step-by-step sign-in instructions
+```
+
+In **Codex** chat, paste once:
+
+```text
+Open https://www.linkedin.com/login using Playwright MCP.
+Wait while I sign in manually. Stop until I say I'm logged in.
+```
+
+Sign in in the browser window (MFA ok). Then say **"I'm logged in to LinkedIn"**.
+
+**Backfill leads** for rows already on the sheet:
+
+```text
+LeadGru backfill rows 42-43 — use Playwright MCP with my signed-in LinkedIn session.
+```
 
 Without browser tools, Jobgru still runs sheet writes + ATS; LeadGru is skipped.
 

@@ -159,7 +159,7 @@ Run **`jobgru check`** first.
 | --- | --- |
 | Auth failed | `gcloud auth login --enable-gdrive-access --update-adc` |
 | Sheet write failed / permission denied | Use **your copy** URL (not template). Account in `gcloud auth` must be **Editor/Owner** on that sheet — Viewer is not enough. Solo setup: Make a copy + same Google account. No need for “anyone with link → Editor”. |
-| No browser / LeadGru skipped | `jobgru mcp install` (Claude/Codex) or use Cursor |
+| No browser / LeadGru skipped | `jobgru mcp install --force` then `jobgru mcp login` — sign into LinkedIn in Playwright once |
 | ATS skipped | Copy resume to `~/.jobgru/data/resumes/` or attach in chat: Jobgru add resume |
 | Wrong sheet | Recopy template; tab = `Job Applications` |
 
