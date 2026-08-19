@@ -12,3 +12,4 @@ scripts/.sheets-token.json
 scripts/oauth-client.json
 scripts/client_secret*.json
 scripts/*-service-account*.json
+.playwright-mcp/
