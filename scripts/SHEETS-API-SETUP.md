@@ -36,7 +36,9 @@ Expected output: `OK: Sheets API write verified`
 | `gcloud auth application-default login --scopes=.../spreadsheets` | *"This app is blocked"* |
 | Wrong Google account | Sheet not found or permission denied |
 | Template URL in setup (viewer only) | Cannot write — use **your copy** URL after File → Make a copy |
-| Viewer access to someone else's sheet | Permission denied on write |
+| Viewer or Commenter on the sheet | Permission denied — need **Editor** or **Owner** for the gcloud account |
+| Wrong Google account in gcloud | Re-auth with the account that has Editor/Owner on the sheet |
+| Confusion: "anyone with link → Editor" | **Not required** for solo setup — Owner after Make a copy is enough |
 
 Re-auth when token expires:
 

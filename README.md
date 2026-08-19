@@ -52,20 +52,32 @@ Update after each release: **`jobgru update`** (pulls latest from `main`).
 
 ### 1. Copy the Google Sheet template
 
-**Open the template (viewer access is OK — you only copy from it):**
+**Step A — Open the template** (viewer access is fine; you only copy from it):
 
 https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit
 
-**Then: File → Make a copy** → tab must stay **`Job Applications`**
+**Step B — File → Make a copy** → tab must stay **`Job Applications`**
 
-> **Do not paste the template URL into Jobgru setup.** The template is read-only. You need **your own copy** where you are Owner/Editor.
+**Step C — Use your copy's URL in Jobgru setup** (not the template URL above).
 
-| What you use | Access needed | Jobgru can write? |
+> **Do not paste the template URL into Jobgru setup.** The template is read-only for everyone except its owner.
+
+#### Who can Jobgru write to the sheet?
+
+Jobgru writes through **your Google account** (`gcloud auth login`). That account must have **Editor** or **Owner** on the sheet — not Viewer, not Commenter.
+
+| Situation | What to do | Jobgru can write? |
 | --- | --- | --- |
-| Template link (above) | Viewer | No — copy only, never use in setup |
-| **Your copy** (after Make a copy) | **Owner / Editor** (automatic) | **Yes** — paste this URL in setup |
-| Someone else's shared sheet | Viewer or Commenter | No — permission denied |
-| Your copy + wrong Google account in `gcloud auth` | — | No — account must match sheet owner |
+| **Template link** (step A) | Copy only — never use in setup | No |
+| **Your copy** after File → Make a copy | You are **Owner** automatically | **Yes** — no extra sharing step needed |
+| Your copy stays **private** (only you) | Fine — Owner + same `gcloud` account | **Yes** |
+| **Someone else's sheet** shared with you as Viewer | Ask them to share you as **Editor** | No until you're Editor |
+| Team sheet — you run Jobgru | Your Google account must be **Editor** on that sheet | Yes if Editor/Owner |
+| Your copy but **`gcloud auth` is a different account** | Re-auth with the sheet owner account | No |
+
+**You do NOT need** “Anyone with the link → Editor” for normal solo setup. After **Make a copy**, you already own the sheet. Keep it private if you want — just run `gcloud auth login` with that same Google account.
+
+**When sharing settings matter:** only if Jobgru runs under a *different* Google account (teammate's sheet, second email, service account). Then that account must be invited as **Editor** — Viewer/Commenter is not enough.
 
 **Use your copy's URL** in chat or terminal:
 
@@ -146,7 +158,7 @@ Run **`jobgru check`** first.
 | Problem | Fix |
 | --- | --- |
 | Auth failed | `gcloud auth login --enable-gdrive-access --update-adc` |
-| Sheet write failed / permission denied | Use **your copy** URL (not template); you must be Editor/Owner; `gcloud auth` same account |
+| Sheet write failed / permission denied | Use **your copy** URL (not template). Account in `gcloud auth` must be **Editor/Owner** on that sheet — Viewer is not enough. Solo setup: Make a copy + same Google account. No need for “anyone with link → Editor”. |
 | No browser / LeadGru skipped | `jobgru mcp install` (Claude/Codex) or use Cursor |
 | ATS skipped | Copy resume to `~/.jobgru/data/resumes/` or attach in chat: Jobgru add resume |
 | Wrong sheet | Recopy template; tab = `Job Applications` |

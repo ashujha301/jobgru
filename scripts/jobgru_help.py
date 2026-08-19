@@ -27,9 +27,10 @@ Install: ~/.jobgru ({mode} mode) · Template: {TEMPLATE_URL}
 
 YOU do (2 manual steps):
   1. Copy template → File → Make a copy → tab must stay "Job Applications"
-     Template is viewer-only (OK). YOUR copy must be Editor/Owner — not someone else's viewer link.
-     gcloud auth must use the same Google account that owns your copy.
-  2. Terminal auth (sheet owner Google account):
+     Template = viewer (copy only). Use YOUR copy URL in setup, not the template.
+     After copy you are Owner — private sheet is OK. No "anyone with link → Editor" needed solo.
+     Jobgru writes via gcloud account — that account must be Editor/Owner (not Viewer).
+  2. Terminal auth (use the Google account that owns / can edit the sheet):
      gcloud auth login --enable-gdrive-access --update-adc
 
 CHAT commands (Cursor / Claude Code / Codex — any folder):
