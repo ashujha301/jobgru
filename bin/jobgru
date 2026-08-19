@@ -51,7 +51,7 @@ print('OK: sheet profile updated (O2, Q2-Q7)')
   mcp)
     exec "$PY" "$SCRIPTS/jobgru_mcp.py" "$@"
     ;;
-  filter)
+  filter|filters)
     exec "$PY" "$SCRIPTS/jobgru_filters.py" "$@"
     ;;
   delete)

@@ -87,8 +87,8 @@ curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh |
 jobgru help
 jobgru check
 jobgru mcp install
-jobgru filter set --location Bangalore --roles "SWE,SWE AI"
-jobgru filter prompt
+jobgru filter
+jobgru filters
 jobgru delete --rows 42-44
 jobgru update
 jobgru uninstall

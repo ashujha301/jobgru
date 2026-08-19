@@ -29,7 +29,7 @@ Everything else is handled by this skill.
 | "Jobgru help" | **help** |
 | "Jobgru check" | **check** |
 | "Jobgru mcp", browser setup, playwright | **mcp** |
-| "Jobgru filter", save/show filters | **filter** |
+| "Jobgru filter", "what filters", list filters | **filter** |
 | "Jobgru delete", delete rows | **delete** |
 
 If unclear, run **check** first and report what's missing.
@@ -73,31 +73,15 @@ Explain to the user:
 
 ## Filter mode
 
-Show saved filters:
+Show every filter type the user can put in a job-search prompt:
 
 ```bash
-.venv/bin/python scripts/jobgru_filters.py show
+.venv/bin/python scripts/jobgru_filters.py
 ```
 
-Save filters (example):
+Or: `jobgru filter`
 
-```bash
-.venv/bin/python scripts/jobgru_filters.py set \
-  --count 3 \
-  --sources "LinkedIn Jobs" \
-  --roles "Software Engineer,SWE AI" \
-  --location "Bangalore" \
-  --exclude-roles "Data Scientist,Data Engineer" \
-  --note "Do not skip similar SWE roles if experience matches"
-```
-
-Print ready job-search prompt:
-
-```bash
-.venv/bin/python scripts/jobgru_filters.py prompt
-```
-
-If user gives filters in chat, parse them into `filter set` flags, save, then show `filter prompt` output for the next pipeline run.
+Print the full catalog — do not show saved config. User picks values and writes a natural prompt, or fills [prompts/jobgru-run.md](../../prompts/jobgru-run.md).
 
 ---
 

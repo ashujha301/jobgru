@@ -37,7 +37,7 @@ CHAT commands (Cursor / Claude Code / Codex — any folder):
   Jobgru help      Show this guide
   Jobgru check     Verify setup is READY
   Jobgru mcp       Install/check Playwright MCP (Claude + Codex browser)
-  Jobgru filter    Show or save job-search filters; print ready prompt
+  Jobgru filter    List every filter type you can use in a job-search prompt
   Jobgru delete    Delete sheet rows (e.g. rows 42-44 or 42,43,44)
   /jobgru + search Run full pipeline (jobs → leads → ATS)
 
@@ -46,9 +46,8 @@ TERMINAL commands:
   jobgru setup --url SHEET_URL --name YOUR_NAME [--resume-link URL]
   jobgru mcp install          Register Playwright MCP (Claude + Codex)
   jobgru mcp status           Browser/MCP status per agent
-  jobgru filter show          Show saved filters
-  jobgru filter set --location Bangalore --roles "SWE,SWE AI" ...
-  jobgru filter prompt        Copy-paste job search prompt from saved filters
+  jobgru filter               List all filter types for job-search prompts
+  jobgru filter --json        Same catalog as JSON
   jobgru delete --rows 42-44    Delete rows and compact the sheet
   jobgru update               Pull latest engine + refresh router skills
   jobgru uninstall            Remove global install
@@ -85,7 +84,7 @@ def help_json() -> dict:
             "Jobgru help": "Show full command guide",
             "Jobgru check": "Health check — must show READY before pipeline",
             "Jobgru mcp": "Install or verify Playwright MCP (Claude/Codex)",
-            "Jobgru filter": "Show/save filters or print job-search prompt",
+            "Jobgru filter": "List all filter types for job-search prompts",
             "Jobgru delete": "Delete rows from sheet (single, list, or range)",
             "/jobgru + search": "Full pipeline: Jobgru + LeadGru + ATSScore",
         },
@@ -94,7 +93,7 @@ def help_json() -> dict:
             "jobgru setup": "Configure sheet (--url, --name, --resume-link)",
             "jobgru mcp install": "Register Playwright MCP for Claude + Codex",
             "jobgru mcp status": "Browser/MCP status",
-            "jobgru filter show|set|prompt": "Saved job-search filters",
+            "jobgru filter": "Catalog of filter types for prompts",
             "jobgru delete --rows SPEC": "Delete rows (42, 42-44, 42,44-46)",
             "jobgru update": "Pull latest from GitHub",
             "jobgru uninstall": "Remove global install",

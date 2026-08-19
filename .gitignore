@@ -2,7 +2,6 @@
 data/runs/*.json
 data/resumes/*.pdf
 config/sheet.json
-config/filters.json
 .env
 *.credentials.json
 .venv/

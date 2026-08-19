@@ -97,7 +97,7 @@ Then verify: **`Jobgru check`** or `jobgru check` → should show **READY** and 
 | **Jobgru help** | Full command guide (setup, check, mcp, filter, delete, pipeline) |
 | **Jobgru check** | Verify everything is ready |
 | **Jobgru mcp** | Install/check Playwright MCP (Claude + Codex browser) |
-| **Jobgru filter** | Show/save job-search filters; print ready prompt |
+| **Jobgru filter** | List all filter types for job-search prompts |
 | **Jobgru delete** | Delete sheet rows (42, 42-44, 42,43,44) |
 | **/jobgru** + job search | Full pipeline (jobs → leads → ATS) |
 
@@ -130,8 +130,8 @@ jobgru help
 jobgru check
 jobgru setup --url "SHEET_URL" --name "Your Name"
 jobgru mcp install
-jobgru filter show
-jobgru filter prompt
+jobgru filter
+jobgru filters
 jobgru delete --rows 42-44
 jobgru update
 jobgru uninstall

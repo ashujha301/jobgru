@@ -4,16 +4,19 @@
 Jobgru filter
 ```
 
-Show saved filters. To save new filters, say what you want in chat, e.g.:
+Lists every filter type you can use in a job-search prompt (roles, location, experience, excluded roles, etc.) — not your saved values.
 
-```text
-Jobgru filter — 3 jobs, LinkedIn only, SWE and SWE AI, Bangalore, exclude Data Scientist and Data Engineer. Note: don't skip if exp matches.
+Terminal:
+
+```bash
+jobgru filter
+jobgru filters
 ```
 
-Then run a search with:
+Then write a normal search prompt using whichever filters you need, e.g.:
 
 ```text
-Jobgru filter prompt
+Jobgru — find 3 SWE jobs on LinkedIn in Bangalore. Exclude Data Scientist. Don't skip if exp matches.
 ```
 
-Or paste the generated prompt from `jobgru filter prompt`.
+Full template: [jobgru-run.md](jobgru-run.md)

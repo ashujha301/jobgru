@@ -21,7 +21,7 @@ Engine: `~/.jobgru` · Router skills: `~/.cursor/skills/jobgru/`, `~/.claude/ski
 | `Jobgru help` | Full command list (`jobgru help`) |
 | `Jobgru check` | `jobgru check` |
 | `Jobgru mcp` | Playwright MCP for Claude/Codex |
-| `Jobgru filter` | Saved job-search filters |
+| `Jobgru filter` | List available filter types for prompts |
 | `Jobgru delete` | Delete sheet rows |
 | Job search | [jobgru/SKILL.md](.cursor/skills/jobgru/SKILL.md) |
 

@@ -1,16 +1,12 @@
 # Publish to GitHub (ashujha301)
 
-The CLI is currently authenticated as **ayush-devvine**. To publish under **ashujha301**:
-
-## 1. Switch GitHub CLI account
+Ensure the CLI is authenticated as **ashujha301**:
 
 ```bash
-gh auth login
-# Choose GitHub.com → HTTPS → Login with browser → account: ashujha301
-gh auth status   # must show ashujha301
+gh auth status   # must show ashujha301 as active
 ```
 
-## 2. Create private repo and push
+## 1. Create private repo and push
 
 From this project root (after tests pass):
 
