@@ -40,7 +40,8 @@ SCRIPTS=""
 echo "==> Jobgru install (HOME=$JOBGRU_HOME)"
 
 has_tty() {
-  [[ -r /dev/tty ]]
+  # Real interactive terminal only (CI has no usable tty)
+  [[ -t 0 ]] && [[ -e /dev/tty ]] && { : >/dev/tty; } 2>/dev/null
 }
 
 read_tty() {
@@ -49,8 +50,8 @@ read_tty() {
   local __var="$2"
   local value=""
   if has_tty; then
-    printf "%s" "$prompt" > /dev/tty
-    IFS= read -r value < /dev/tty || true
+    printf "%s" "$prompt" > /dev/tty 2>/dev/null || true
+    IFS= read -r value < /dev/tty 2>/dev/null || true
   fi
   printf -v "$__var" '%s' "$value"
 }

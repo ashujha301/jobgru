@@ -28,7 +28,7 @@ jobs:
       - name: Installer smoke test
         run: |
           chmod +x install.sh bin/jobgru
-          ./install.sh --local . --skip-mcp
+          ./install.sh --local . --skip-mcp --skip-setup
           ~/.jobgru/.venv/bin/python ~/.jobgru/scripts/jobgru_check.py --json | tee check.json
           python3 -c "
           import json, sys
