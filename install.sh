@@ -159,17 +159,31 @@ install_venv() {
   SCRIPTS="$JOBGRU_HOME/scripts"
 }
 
+agent_installed() {
+  # Usage: agent_installed <home-dir> <cli-name>
+  [[ -d "$1" ]] || command -v "$2" >/dev/null 2>&1
+}
+
 install_router_skills() {
   local router="$JOBGRU_HOME/skill-global/jobgru/SKILL.md"
   if [[ ! -f "$router" ]]; then
     echo "WARN: Router skill not found at $router" >&2
     return
   fi
-  for dir in "$HOME/.cursor/skills/jobgru" "$HOME/.claude/skills/jobgru" "$HOME/.codex/skills/jobgru"; do
-    if [[ -d "$(dirname "$dir")" ]] || [[ "$dir" == *".cursor"* && -d "$HOME/.cursor" ]]; then
+  local agents=(
+    "$HOME/.cursor|cursor|$HOME/.cursor/skills/jobgru"
+    "$HOME/.claude|claude|$HOME/.claude/skills/jobgru"
+    "$HOME/.codex|codex|$HOME/.codex/skills/jobgru"
+  )
+  local entry agent_home cli dir
+  for entry in "${agents[@]}"; do
+    IFS='|' read -r agent_home cli dir <<< "$entry"
+    if agent_installed "$agent_home" "$cli"; then
       mkdir -p "$dir"
       cp "$router" "$dir/SKILL.md"
       echo "==> Installed router skill: $dir/SKILL.md"
+    else
+      echo "==> SKIP $cli skill ($agent_home not found and no '$cli' CLI on PATH)"
     fi
   done
 }

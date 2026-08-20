@@ -98,6 +98,56 @@ def check_python(report: Report) -> None:
     )
 
 
+def check_router_skills(report: Report) -> None:
+    """Router skill must be installed for every agent present on this machine."""
+    agents = [
+        ("cursor", Path.home() / ".cursor"),
+        ("claude", Path.home() / ".claude"),
+        ("codex", Path.home() / ".codex"),
+    ]
+    installed: list[str] = []
+    missing: list[str] = []
+    for cli, agent_home in agents:
+        present = agent_home.is_dir() or shutil.which(cli) is not None
+        if not present:
+            continue
+        skill = agent_home / "skills" / "jobgru" / "SKILL.md"
+        if skill.is_file():
+            installed.append(cli)
+        else:
+            missing.append(cli)
+
+    if missing:
+        report.add(
+            CheckResult(
+                id="router_skills",
+                status="fail",
+                message=f"Router skill missing for: {', '.join(missing)}"
+                + (f" (installed: {', '.join(installed)})" if installed else ""),
+                fix="Run: jobgru update — reinstalls the skill for every detected agent",
+                fix_command="jobgru update",
+                readme_anchor="README.md#chat-commands",
+            )
+        )
+    elif installed:
+        report.add(
+            CheckResult(
+                id="router_skills",
+                status="pass",
+                message=f"Router skill installed for: {', '.join(installed)}",
+            )
+        )
+    else:
+        report.add(
+            CheckResult(
+                id="router_skills",
+                status="warn",
+                message="No agent detected (~/.cursor, ~/.claude, ~/.codex) — /jobgru chat command unavailable",
+                fix="Install Cursor, Claude Code, or Codex, then run: jobgru update",
+            )
+        )
+
+
 def check_venv(report: Report) -> None:
     exists = VENV_PYTHON.is_file()
     report.add(
@@ -472,6 +522,7 @@ def run_all_checks() -> Report:
     report = Report()
     check_install_mode(report)
     check_python(report)
+    check_router_skills(report)
     check_venv(report)
     check_deps(report)
     check_gcloud_cli(report)
