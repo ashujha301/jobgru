@@ -8,9 +8,24 @@ This doc is for troubleshooting and technical detail.
 
 ## Interactive installer wizard
 
+| Platform | Command |
+| --- | --- |
+| Mac / Linux / WSL | `curl -fsSL .../install.sh \| bash` |
+| Windows PowerShell/CMD | `irm .../install.ps1 \| iex` (runs inside WSL) |
+
+**Mac / Linux / WSL:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
 ```
+
+**Windows (PowerShell or CMD):**
+
+```powershell
+irm https://raw.githubusercontent.com/ashujha301/jobgru/main/install.ps1 | iex
+```
+
+The PowerShell bootstrapper detects WSL, offers `wsl --install` if missing, then runs the same bash wizard inside Linux. After install, use `wsl jobgru check` from Windows.
 
 The installer prompts you through (each step skippable):
 

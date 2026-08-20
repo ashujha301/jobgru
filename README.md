@@ -15,15 +15,28 @@ Works in **Cursor, Claude Code, Codex**, or any agent — install once, use `/jo
 
 ## First-time setup — one command
 
-Run this in your terminal. The installer walks you through everything interactively:
+The installer walks you through everything interactively (gcloud, sheet, LinkedIn, check).
+
+| Platform | Command |
+| --- | --- |
+| **Mac / Linux / WSL** | `curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh \| bash` |
+| **Windows (PowerShell or CMD)** | `irm https://raw.githubusercontent.com/ashujha301/jobgru/main/install.ps1 \| iex` |
+
+**Mac / Linux / WSL:**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
 ```
 
-**Private repo:** you need git access to `github.com/ashujha301/jobgru`.
+**Windows PowerShell or CMD** (uses WSL — installs WSL if missing):
 
-**Windows:** run the same command inside **Git Bash** (comes with [Git for Windows](https://git-scm.com/download/win)) or **WSL** — plain CMD/PowerShell won't work. The wizard (browser open, prompts, gcloud, LinkedIn login) works in both.
+```powershell
+irm https://raw.githubusercontent.com/ashujha301/jobgru/main/install.ps1 | iex
+```
+
+After WSL install + reboot, open **Ubuntu** once, then re-run the `irm` command. Run Jobgru CLI from WSL: `wsl jobgru check`.
+
+**Private repo:** you need git access to `github.com/ashujha301/jobgru`.
 
 ### What the installer does (in order)
 

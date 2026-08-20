@@ -241,6 +241,7 @@ setup_gcloud() {
     if ! command -v gcloud >/dev/null 2>&1; then
       if has_tty; then
         echo ""
+        local wait_input=""
         read_tty "Press ENTER when gcloud is installed (or type 'skip' to finish setup later): " wait_input
         if [[ "$(echo "$wait_input" | tr '[:upper:]' '[:lower:]')" == "skip" ]]; then
           echo "Skipped gcloud setup. Run later: gcloud auth login --enable-gdrive-access --update-adc"
