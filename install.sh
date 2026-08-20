@@ -98,11 +98,11 @@ open_browser() {
 }
 
 template_url() {
-  "$PY" -c "from sheet_config import get_template_sheet_url; print(get_template_sheet_url())"
+  PYTHONPATH="$SCRIPTS" "$PY" -c "from sheet_config import get_template_sheet_url; print(get_template_sheet_url())"
 }
 
 template_id() {
-  "$PY" -c "from sheet_config import get_template_sheet_url, parse_spreadsheet_id; print(parse_spreadsheet_id(get_template_sheet_url()))"
+  PYTHONPATH="$SCRIPTS" "$PY" -c "from sheet_config import get_template_sheet_url, parse_spreadsheet_id; print(parse_spreadsheet_id(get_template_sheet_url()))"
 }
 
 gcloud_adc_ok() {
@@ -342,7 +342,7 @@ setup_sheet() {
 
     # Reject template URL
     local pasted_id=""
-    pasted_id="$("$PY" -c "
+    pasted_id="$(PYTHONPATH="$SCRIPTS" "$PY" -c "
 from sheet_config import parse_spreadsheet_id
 import sys
 try:
