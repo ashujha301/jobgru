@@ -19,7 +19,8 @@ jobs:
         run: shellcheck install.sh bin/jobgru
 
       - name: PowerShell syntax (install.ps1)
-        run: pwsh -NoProfile -Command "[scriptblock]::Create((Get-Content install.ps1 -Raw)) | Out-Null; Write-Host 'OK: install.ps1 parses'"
+        run: |
+          pwsh -NoProfile -Command "[scriptblock]::Create((Get-Content install.ps1 -Raw)) | Out-Null; Write-Host 'OK install.ps1 parses'"
 
       - name: Python compile
         run: python3 -m py_compile scripts/*.py
