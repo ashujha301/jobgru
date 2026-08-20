@@ -44,6 +44,7 @@ Verify a configured sheet without full check:
 | Jobgru check | [prompts/check.md](../prompts/check.md) |
 | Jobgru mcp | `jobgru mcp install` / [docs/SETUP.md#browser-and-mcp](#browser-and-mcp) |
 | Jobgru filter | [prompts/filter.md](../prompts/filter.md) |
+| Jobgru prompts | `jobgru prompts` / [prompts/jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md) |
 | Jobgru delete | [prompts/delete.md](../prompts/delete.md) |
 
 Agent skill: [.cursor/skills/jobgru-setup/SKILL.md](../.cursor/skills/jobgru-setup/SKILL.md)

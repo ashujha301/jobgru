@@ -50,7 +50,8 @@ CHAT commands (Cursor / Claude Code / Codex — any folder):
   Jobgru help      Show this guide
   Jobgru check     Verify setup is READY
   Jobgru mcp       Install/check Playwright MCP (Claude + Codex browser)
-  Jobgru filter    List filter types + example prompt template
+  Jobgru filter    List filter types for job-search prompts
+  Jobgru prompts   Copy-edit-paste example prompts for a job run
   Jobgru delete    Delete sheet rows (e.g. rows 42-44 or 42,43,44)
   /jobgru + search Run full pipeline (jobs → leads → ATS)
 
@@ -60,8 +61,10 @@ TERMINAL commands:
   jobgru mcp install          Register Playwright MCP (Claude + Codex)
   jobgru mcp login            Open LinkedIn login in the Jobgru browser (one time)
   jobgru mcp status           Browser/MCP status
-  jobgru filter               Filter catalog + example prompt (prompts/jobgru-run.md)
-  jobgru filter --json        Same catalog as JSON
+  jobgru filter               Filter catalog (all filter types)
+  jobgru prompts              Example prompts — copy, edit, paste into chat
+  jobgru prompts --which example_linkedin_swe_bangalore
+  jobgru filter --json        Filter catalog as JSON
   jobgru delete --rows 42-44    Delete rows and compact the sheet
   jobgru update               Pull latest engine + refresh router skills
   jobgru uninstall            Remove global install
@@ -102,7 +105,8 @@ def help_json() -> dict:
             "Jobgru help": "Show full command guide",
             "Jobgru check": "Health check — must show READY before pipeline",
             "Jobgru mcp": "Install or verify Playwright MCP (Claude/Codex)",
-            "Jobgru filter": "Filter catalog + example prompt template",
+            "Jobgru filter": "Filter catalog for job-search prompts",
+            "Jobgru prompts": "Copy-edit-paste example prompts for a job run",
             "Jobgru delete": "Delete rows from sheet (single, list, or range)",
             "/jobgru + search": "Full pipeline: Jobgru + LeadGru + ATSScore",
         },
@@ -111,7 +115,9 @@ def help_json() -> dict:
             "jobgru setup": "Configure sheet (--url, --name, --resume-link)",
             "jobgru mcp install": "Register Playwright MCP for Claude + Codex",
             "jobgru mcp status": "Browser/MCP status",
-            "jobgru filter": "Catalog of filter types for prompts",
+            "jobgru filter": "Filter catalog",
+            "jobgru prompts": "Example prompts to copy into chat",
+            "jobgru prompts --which NAME": "One prompt block (template, example_linkedin_swe_bangalore, short_natural)",
             "jobgru delete --rows SPEC": "Delete rows (42, 42-44, 42,44-46)",
             "jobgru update": "Pull latest from GitHub",
             "jobgru uninstall": "Remove global install",

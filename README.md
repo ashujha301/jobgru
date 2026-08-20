@@ -51,11 +51,21 @@ Or in chat: `Jobgru add resume` (attach PDF).
 
 **Codex / Claude Code:** start a **new session** (MCP tools load at session start).
 
-```text
-Find 3 software engineer jobs on LinkedIn in Bangalore. Add them to my Job Applications sheet.
+Get copy-edit-paste example prompts:
+
+```bash
+jobgru prompts
 ```
 
-Or copy the example from [prompts/jobgru-run.md](prompts/jobgru-run.md), edit filters, paste into chat.
+Or on GitHub: [prompts/jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md)
+
+Edit the template, paste into chat. Plain English also works:
+
+```text
+Find 3 software engineer jobs on LinkedIn in Bangalore. Exclude Data Scientist. Run ATS scoring.
+```
+
+See all filter types: `jobgru filter`
 
 ### What a successful run looks like
 
@@ -178,11 +188,12 @@ LeadGru backfill rows 42-43 — use Playwright MCP with my signed-in LinkedIn se
 | **Jobgru help** | Full command guide (setup, check, mcp, filter, delete, pipeline) |
 | **Jobgru check** | Verify everything is ready |
 | **Jobgru mcp** | Install/check Playwright MCP (Claude + Codex browser) |
-| **Jobgru filter** | Filter catalog + example prompt |
+| **Jobgru filter** | Filter catalog for job-search prompts |
+| **Jobgru prompts** | Example prompts to copy, edit, paste |
 | **Jobgru delete** | Delete sheet rows (42, 42-44, 42,43,44) |
 | **/jobgru** + job search | Full pipeline (jobs → leads → ATS) |
 
-Prompts: [setup.md](prompts/setup.md) · [help.md](prompts/help.md) · [check.md](prompts/check.md) · [filter.md](prompts/filter.md) · [delete.md](prompts/delete.md)
+Prompts: [jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md) · [prompts.md](prompts/prompts.md) · [setup.md](prompts/setup.md) · [filter.md](prompts/filter.md)
 
 ---
 
@@ -194,7 +205,8 @@ jobgru check         # is everything ready?
 jobgru setup --url "SHEET_URL" --name "Your Name"
 jobgru mcp status    # is Playwright MCP registered?
 jobgru mcp login     # sign into LinkedIn again
-jobgru filter        # see filter types for prompts
+jobgru filter        # all filter types
+jobgru prompts       # example prompts — copy, edit, paste into chat
 jobgru delete --rows 42-44   # delete test rows
 jobgru update        # pull latest from main
 jobgru uninstall     # remove global install

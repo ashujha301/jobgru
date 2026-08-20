@@ -19,7 +19,14 @@ jobgru filters
 
 ## Example prompt (copy and edit)
 
-Full template: [jobgru-run.md](jobgru-run.md)
+Full template on GitHub: [jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md)
+
+Terminal:
+
+```bash
+jobgru prompts
+jobgru filter
+```
 
 ```text
 Jobgru

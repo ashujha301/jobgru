@@ -6,6 +6,10 @@ Copy the template below, edit the values, paste into chat.
 
 See every filter type: `jobgru filter` or **Jobgru filter** in chat.
 
+Get copy-edit-paste examples: `jobgru prompts` or **Jobgru prompts** in chat.
+
+GitHub: https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md
+
 Limits: **50 jobs max per run**, **25 max from LinkedIn**.
 
 ---

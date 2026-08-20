@@ -32,6 +32,7 @@ Everything else is handled by this skill.
 | "Jobgru check" | **check** |
 | "Jobgru mcp", browser setup, playwright | **mcp** |
 | "Jobgru filter", "what filters", list filters | **filter** |
+| "Jobgru prompts", example prompt, job search prompt | **prompts** |
 | "Jobgru delete", delete rows | **delete** |
 
 If unclear, run **check** first and report what's missing.
@@ -83,7 +84,30 @@ Show every filter type the user can put in a job-search prompt (plain English + 
 
 Or: `jobgru filter`
 
-Print the full catalog and point to [prompts/jobgru-run.md](../../prompts/jobgru-run.md) for the copy-paste example template.
+Print the full catalog. Point users to `jobgru prompts` for copy-edit-paste examples.
+
+---
+
+## Prompts mode
+
+Show example prompts the user can copy, edit, and paste into chat:
+
+```bash
+.venv/bin/python scripts/jobgru_prompts.py
+```
+
+Or: `jobgru prompts`
+
+Variants:
+
+```bash
+jobgru prompts --which example_linkedin_swe_bangalore
+jobgru prompts --json
+```
+
+GitHub: https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md
+
+Do not paraphrase — print the full output from the script.
 
 ---
 

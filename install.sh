@@ -440,7 +440,8 @@ print_next_steps() {
   echo "  Or in chat: Jobgru add resume"
   echo ""
   echo "Run your first job search (any agent):"
-  echo "  Find 3 software engineer jobs on LinkedIn in Bangalore"
+  echo "  jobgru prompts    # copy example, edit filters, paste into chat"
+  echo "  jobgru filter     # see all filter types"
   echo ""
   echo "Commands: jobgru help · jobgru check · jobgru update"
 }

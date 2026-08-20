@@ -174,21 +174,11 @@ def catalog_text() -> str:
         lines.append("")
     lines.extend(
         [
-            "Example prompt (copy and edit — full template: prompts/jobgru-run.md):",
+            "Example prompt (copy and edit — run: jobgru prompts):",
             "",
-            "  Jobgru",
+            "  jobgru prompts",
             "",
-            "  Count: 3",
-            "  Boards: LinkedIn",
-            "  Roles: Software Engineer, SWE AI",
-            "  Location: Bangalore",
-            "  Experience: 0–4 years",
-            "  Exclude: Data Scientist, Data Engineer",
-            "  Staffing agencies: no",
-            "  ATS scoring: yes",
-            "",
-            "On/off: Staffing agencies and ATS scoring — yes or no.",
-            "Plain English also works: Find 3 SWE jobs on LinkedIn in Bangalore.",
+            "  GitHub: https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md",
         ]
     )
     return "\n".join(lines)

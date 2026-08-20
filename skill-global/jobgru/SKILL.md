@@ -17,7 +17,8 @@ All shell commands use `$JOBGRU_HOME/.venv/bin/python $JOBGRU_HOME/scripts/...` 
 | help | Run `$JOBGRU_HOME/.venv/bin/python $JOBGRU_HOME/scripts/jobgru_help.py` |
 | check | Run `$JOBGRU_HOME/.venv/bin/python $JOBGRU_HOME/scripts/jobgru_check.py --json` |
 | mcp, browser setup, playwright | Run `$JOBGRU_HOME/.venv/bin/python $JOBGRU_HOME/scripts/jobgru_mcp.py status` or `jobgru mcp install` |
-| filter, saved filters, job search filters | `$JOBGRU_HOME/.cursor/skills/jobgru-setup/SKILL.md` → **filter** (lists available filter types) |
+| filter, saved filters, job search filters | `$JOBGRU_HOME/.cursor/skills/jobgru-setup/SKILL.md` → **filter** |
+| prompts, example prompt, job search prompt | Run `$JOBGRU_HOME/.venv/bin/python $JOBGRU_HOME/scripts/jobgru_prompts.py` or `jobgru prompts` |
 | delete rows, remove jobs from sheet | `$JOBGRU_HOME/.cursor/skills/jobgru-setup/SKILL.md` → **delete** |
 | job search, find jobs, pipeline | `$JOBGRU_HOME/.cursor/skills/jobgru/SKILL.md` (+ leadgru, atsscore after Phase 1) |
 
@@ -47,6 +48,7 @@ jobgru help
 jobgru check
 jobgru mcp install
 jobgru filter
+jobgru prompts
 jobgru delete --rows 42-44
 ```
 
