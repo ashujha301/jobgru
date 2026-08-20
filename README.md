@@ -23,6 +23,8 @@ curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh |
 
 **Private repo:** you need git access to `github.com/ashujha301/jobgru`.
 
+**Windows:** run the same command inside **Git Bash** (comes with [Git for Windows](https://git-scm.com/download/win)) or **WSL** — plain CMD/PowerShell won't work. The wizard (browser open, prompts, gcloud, LinkedIn login) works in both.
+
 ### What the installer does (in order)
 
 | Step | What happens | You do |

@@ -74,8 +74,22 @@ prompt_yn() {
 
 open_browser() {
   local url="$1"
-  if [[ "$(uname -s)" == "Darwin" ]] && command -v open >/dev/null 2>&1; then
+  local os
+  os="$(uname -s)"
+  if [[ "$os" == "Darwin" ]] && command -v open >/dev/null 2>&1; then
     open "$url" >/dev/null 2>&1 || true
+  elif [[ "$os" == MINGW* || "$os" == MSYS* || "$os" == CYGWIN* ]]; then
+    # Git Bash / Cygwin on Windows
+    start "" "$url" >/dev/null 2>&1 || cmd.exe /c start "" "$url" >/dev/null 2>&1 || \
+      echo "Open this URL in your browser: $url"
+  elif grep -qi microsoft /proc/version 2>/dev/null; then
+    # WSL
+    if command -v wslview >/dev/null 2>&1; then
+      wslview "$url" >/dev/null 2>&1 || true
+    else
+      powershell.exe -NoProfile -Command "Start-Process '$url'" >/dev/null 2>&1 || \
+        echo "Open this URL in your browser: $url"
+    fi
   elif command -v xdg-open >/dev/null 2>&1; then
     xdg-open "$url" >/dev/null 2>&1 || true
   else
@@ -99,14 +113,27 @@ install_engine() {
   if [[ -n "$LOCAL_SOURCE" ]]; then
     echo "==> Syncing from local path: $LOCAL_SOURCE"
     mkdir -p "$JOBGRU_HOME"
-    rsync -a --delete \
-      --exclude '.venv' \
-      --exclude '.git' \
-      --exclude 'config/sheet.json' \
-      --exclude 'data/runs/*.json' \
-      --exclude 'data/resumes/*.pdf' \
-      --exclude '__pycache__' \
-      "$LOCAL_SOURCE/" "$JOBGRU_HOME/"
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a --delete \
+        --exclude '.venv' \
+        --exclude '.git' \
+        --exclude 'config/sheet.json' \
+        --exclude 'data/runs/*.json' \
+        --exclude 'data/resumes/*.pdf' \
+        --exclude '__pycache__' \
+        "$LOCAL_SOURCE/" "$JOBGRU_HOME/"
+    else
+      # rsync missing (e.g. Git Bash on Windows) — fall back to tar copy
+      echo "NOTE: rsync not found — using tar copy (config/data preserved)"
+      (cd "$LOCAL_SOURCE" && tar -cf - \
+        --exclude '.venv' \
+        --exclude '.git' \
+        --exclude 'config/sheet.json' \
+        --exclude 'data/runs' \
+        --exclude 'data/resumes' \
+        --exclude '__pycache__' \
+        .) | (cd "$JOBGRU_HOME" && tar -xf -)
+    fi
   elif [[ -d "$JOBGRU_HOME/.git" ]]; then
     echo "==> Updating existing clone"
     git -C "$JOBGRU_HOME" pull --ff-only
@@ -146,7 +173,15 @@ install_path_command() {
   mkdir -p "$JOBGRU_HOME/bin"
   chmod +x "$JOBGRU_HOME/bin/jobgru"
   mkdir -p "$HOME/.local/bin"
-  ln -sf "$JOBGRU_HOME/bin/jobgru" "$HOME/.local/bin/jobgru"
+  local os
+  os="$(uname -s)"
+  if [[ "$os" == MINGW* || "$os" == MSYS* || "$os" == CYGWIN* ]]; then
+    # Git Bash "symlinks" are copies that go stale — install a tiny wrapper instead
+    printf '#!/usr/bin/env bash\nexec "%s/bin/jobgru" "$@"\n' "$JOBGRU_HOME" > "$HOME/.local/bin/jobgru"
+    chmod +x "$HOME/.local/bin/jobgru"
+  else
+    ln -sf "$JOBGRU_HOME/bin/jobgru" "$HOME/.local/bin/jobgru"
+  fi
   echo "==> Linked jobgru → ~/.local/bin/jobgru"
   case ":$PATH:" in
     *":$HOME/.local/bin:"*) ;;
@@ -187,13 +222,18 @@ setup_gcloud() {
     echo "Google Cloud SDK (gcloud) is not installed."
     echo "Jobgru needs it to read and write your Google Sheet."
     echo ""
-    if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+    local os
+    os="$(uname -s)"
+    if [[ "$os" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
       if prompt_yn "Install Google Cloud SDK via Homebrew now? [y/N]" n; then
         echo "==> Installing google-cloud-sdk (this may take a few minutes)..."
         brew install --cask google-cloud-sdk || echo "WARN: brew install failed — install manually" >&2
       else
         echo "Install manually: https://cloud.google.com/sdk/docs/install"
       fi
+    elif [[ "$os" == MINGW* || "$os" == MSYS* || "$os" == CYGWIN* ]]; then
+      echo "Windows: download the installer from https://cloud.google.com/sdk/docs/install"
+      echo "(run GoogleCloudSDKInstaller.exe, then reopen Git Bash so gcloud is on PATH)"
     else
       echo "Install from: https://cloud.google.com/sdk/docs/install"
     fi
