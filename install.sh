@@ -39,9 +39,13 @@ SCRIPTS=""
 
 echo "==> Jobgru install (HOME=$JOBGRU_HOME)"
 
+is_ci() {
+  [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]
+}
+
 has_tty() {
-  # Real interactive terminal only (CI has no usable tty)
-  [[ -t 0 ]] && [[ -e /dev/tty ]] && { : >/dev/tty; } 2>/dev/null
+  # curl | bash pipes stdin (not a tty) — prompts use /dev/tty instead
+  [[ -e /dev/tty ]] && { : >/dev/tty; } 2>/dev/null
 }
 
 read_tty() {
@@ -476,12 +480,25 @@ if [[ "$SKIP_SETUP" -eq 1 ]]; then
   exit 0
 fi
 
-if has_tty; then
-  setup_gcloud
-  setup_sheet
-  offer_linkedin_login
-  run_final_check
-  print_next_steps
-else
-  print_manual_setup
+if is_ci; then
+  echo "CI environment detected — engine installed. Use --skip-setup for automated installs."
+  exit 0
 fi
+
+if ! has_tty; then
+  echo ""
+  echo "ERROR: No interactive terminal (cannot read /dev/tty)." >&2
+  echo "Save and run the installer directly so the wizard can prompt you:" >&2
+  echo "  curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh -o install.sh" >&2
+  echo "  bash install.sh" >&2
+  echo ""
+  echo "Or finish setup with: jobgru setup --url \"YOUR_COPY_URL\"" >&2
+  exit 1
+fi
+
+echo "==> Starting interactive setup wizard"
+setup_gcloud
+setup_sheet
+offer_linkedin_login
+run_final_check
+print_next_steps
