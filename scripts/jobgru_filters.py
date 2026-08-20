@@ -144,6 +144,84 @@ FILTER_CATALOG: list[dict] = [
 ]
 
 
+# Prompt template lines — one per filter in FILTER_CATALOG (keep in sync).
+PROMPT_TEMPLATE_FIELDS: list[dict[str, str]] = [
+    {"id": "count", "label": "Count"},
+    {"id": "sources", "label": "Boards"},
+    {"id": "roles", "label": "Roles"},
+    {"id": "role_variants", "label": "Similar roles"},
+    {"id": "location", "label": "Location"},
+    {"id": "remote_restriction", "label": "Remote restriction"},
+    {"id": "work_arrangement", "label": "Work"},
+    {"id": "experience", "label": "Experience"},
+    {"id": "visa", "label": "Visa sponsorship"},
+    {"id": "required_skills", "label": "Skills"},
+    {"id": "excluded_roles", "label": "Exclude"},
+    {"id": "min_compensation", "label": "Minimum compensation"},
+    {"id": "employment_type", "label": "Employment type"},
+    {"id": "max_posting_age", "label": "Posting age"},
+    {"id": "exclude_staffing_agencies", "label": "Staffing agencies", "default": "no"},
+    {"id": "ats_scoring", "label": "ATS scoring", "default": "yes"},
+    {"id": "note", "label": "Note"},
+]
+
+EXAMPLE_PROMPT_VALUES: dict[str, str] = {
+    "count": "3",
+    "sources": "LinkedIn",
+    "roles": "Software Engineer, SWE AI",
+    "role_variants": "include Full Stack if backend stack matches",
+    "location": "Bangalore",
+    "remote_restriction": "India only",
+    "work_arrangement": "hybrid or onsite",
+    "experience": "0–4 years",
+    "visa": "irrelevant",
+    "required_skills": "Python, FastAPI",
+    "excluded_roles": "Data Scientist, Data Engineer",
+    "min_compensation": "not required",
+    "employment_type": "full-time only",
+    "max_posting_age": "30 days",
+    "exclude_staffing_agencies": "no",
+    "ats_scoring": "yes",
+    "note": "don't skip if experience matches for similar roles",
+}
+
+SHORT_NATURAL_PROMPT = (
+    "Find 3 software engineer jobs on LinkedIn in Bangalore. "
+    "Exclude Data Scientist. Run ATS scoring."
+)
+
+
+def build_prompt(values: dict[str, str] | None = None, *, blank: bool = False) -> str:
+    """Build a Jobgru prompt block from filter fields."""
+    values = values or {}
+    lines = ["Jobgru", ""]
+    for field in PROMPT_TEMPLATE_FIELDS:
+        fid = field["id"]
+        label = field["label"]
+        if blank:
+            default = field.get("default")
+            if default is not None:
+                lines.append(f"{label}: {default}")
+            else:
+                lines.append(f"{label}:")
+            continue
+        if fid in values:
+            lines.append(f"{label}: {values[fid]}")
+        elif "default" in field:
+            lines.append(f"{label}: {field['default']}")
+        else:
+            lines.append(f"{label}:")
+    return "\n".join(lines)
+
+
+def prompt_template() -> str:
+    return build_prompt(blank=True)
+
+
+def prompt_example() -> str:
+    return build_prompt(EXAMPLE_PROMPT_VALUES)
+
+
 def catalog_text() -> str:
     lines = [
         "Jobgru — filters you can use in a job-search prompt",

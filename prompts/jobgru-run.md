@@ -4,9 +4,7 @@ Copy the template below, edit the values, paste into chat.
 
 **One prompt runs the full pipeline:** find jobs → write sheet → LinkedIn leads → ATS scores.
 
-See every filter type: `jobgru filter` or **Jobgru filter** in chat.
-
-Get copy-edit-paste examples: `jobgru prompts` or **Jobgru prompts** in chat.
+Terminal: `jobgru prompts` · Filter catalog: `jobgru filter`
 
 GitHub: https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md
 
@@ -16,6 +14,8 @@ Limits: **50 jobs max per run**, **25 max from LinkedIn**.
 
 ## Template (edit and paste)
 
+Every filter — leave a line blank if you do not care.
+
 ```text
 Jobgru
 
@@ -24,17 +24,41 @@ Boards:
 Roles:
 Similar roles:
 Location:
+Remote restriction:
 Work:
 Experience:
+Visa sponsorship:
 Skills:
 Exclude:
+Minimum compensation:
+Employment type:
 Posting age:
 Staffing agencies: no
 ATS scoring: yes
 Note:
 ```
 
-**On/off fields:** `Staffing agencies` and `ATS scoring` — use `yes` or `no`. Leave a line blank if you do not care.
+**On/off fields:** `Staffing agencies` and `ATS scoring` — use `yes` or `no`.
+
+| Filter | Line in template |
+| --- | --- |
+| Target / count | Count |
+| Job boards / sources | Boards |
+| Role / domain | Roles |
+| Acceptable role variants | Similar roles |
+| Location | Location |
+| Remote country / time zone | Remote restriction |
+| Work arrangement | Work |
+| Experience | Experience |
+| Visa sponsorship | Visa sponsorship |
+| Required skills | Skills |
+| Excluded roles | Exclude |
+| Minimum compensation | Minimum compensation |
+| Employment type | Employment type |
+| Maximum posting age | Posting age |
+| Exclude staffing agencies | Staffing agencies |
+| ATS scoring | ATS scoring |
+| Extra instructions | Note |
 
 ---
 
@@ -48,10 +72,14 @@ Boards: LinkedIn
 Roles: Software Engineer, SWE AI
 Similar roles: include Full Stack if backend stack matches
 Location: Bangalore
+Remote restriction: India only
 Work: hybrid or onsite
 Experience: 0–4 years
+Visa sponsorship: irrelevant
 Skills: Python, FastAPI
 Exclude: Data Scientist, Data Engineer
+Minimum compensation: not required
+Employment type: full-time only
 Posting age: 30 days
 Staffing agencies: no
 ATS scoring: yes
@@ -68,4 +96,4 @@ You do not need the template — plain English works if setup is done:
 Find 3 software engineer jobs on LinkedIn in Bangalore. Exclude Data Scientist. Run ATS scoring.
 ```
 
-Use `jobgru filter` when you want to see all filter types before writing a prompt.
+Use `jobgru filter` when you want descriptions and e.g. values for each filter.

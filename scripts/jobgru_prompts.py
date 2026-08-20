@@ -5,15 +5,18 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from jobgru_home import get_jobgru_home  # noqa: E402
-from jobgru_filters import RUN_LIMITS  # noqa: E402
+from jobgru_filters import (  # noqa: E402
+    RUN_LIMITS,
+    SHORT_NATURAL_PROMPT,
+    prompt_example,
+    prompt_template,
+)
 
 GITHUB_PROMPTS_URL = "https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md"
 
@@ -24,23 +27,12 @@ PROMPT_LABELS = (
 )
 
 
-def prompts_markdown_path() -> Path:
-    return get_jobgru_home() / "prompts" / "jobgru-run.md"
-
-
-def extract_text_blocks(markdown: str) -> list[str]:
-    blocks = re.findall(r"```text\n(.*?)```", markdown, flags=re.DOTALL)
-    return [block.strip("\n") for block in blocks]
-
-
 def load_prompt_blocks() -> dict[str, str]:
-    path = prompts_markdown_path()
-    if not path.is_file():
-        raise SystemExit(f"Prompt file not found: {path}\nRun: jobgru update")
-    blocks = extract_text_blocks(path.read_text(encoding="utf-8"))
-    if len(blocks) < len(PROMPT_LABELS):
-        raise SystemExit(f"Expected {len(PROMPT_LABELS)} prompt blocks in {path}, found {len(blocks)}")
-    return dict(zip(PROMPT_LABELS, blocks, strict=False))
+    return {
+        "template": prompt_template(),
+        "example_linkedin_swe_bangalore": prompt_example(),
+        "short_natural": SHORT_NATURAL_PROMPT,
+    }
 
 
 def prompts_text(blocks: dict[str, str]) -> str:
@@ -51,11 +43,11 @@ def prompts_text(blocks: dict[str, str]) -> str:
         "One prompt runs the full pipeline: jobs → leads → ATS.",
         f"Limits: max {RUN_LIMITS['max_jobs_per_run']} jobs/run, LinkedIn max {RUN_LIMITS['max_linkedin_per_run']}/run.",
         "",
-        "1) TEMPLATE — edit blank fields, paste into chat",
+        "1) TEMPLATE — all filters (edit values, paste into chat)",
         "-" * 34,
         blocks["template"],
         "",
-        "2) EXAMPLE — LinkedIn SWE in Bangalore",
+        "2) EXAMPLE — LinkedIn SWE in Bangalore (all filters filled)",
         "-" * 34,
         blocks["example_linkedin_swe_bangalore"],
         "",

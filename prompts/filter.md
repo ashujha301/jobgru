@@ -12,21 +12,14 @@ Terminal:
 
 ```bash
 jobgru filter
-jobgru filters
+jobgru prompts
 ```
+
+GitHub template: [jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md)
 
 ---
 
-## Example prompt (copy and edit)
-
-Full template on GitHub: [jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md)
-
-Terminal:
-
-```bash
-jobgru prompts
-jobgru filter
-```
+## Example prompt (all filters filled)
 
 ```text
 Jobgru
@@ -36,14 +29,18 @@ Boards: LinkedIn
 Roles: Software Engineer, SWE AI
 Similar roles: include Full Stack if backend stack matches
 Location: Bangalore
+Remote restriction: India only
 Work: hybrid or onsite
 Experience: 0–4 years
+Visa sponsorship: irrelevant
 Skills: Python, FastAPI
 Exclude: Data Scientist, Data Engineer
+Minimum compensation: not required
+Employment type: full-time only
 Posting age: 30 days
 Staffing agencies: no
 ATS scoring: yes
 Note: don't skip if experience matches for similar roles
 ```
 
-Edit the values you care about. Leave lines blank if a filter does not matter.
+Blank template with every filter: `jobgru prompts --which template`
