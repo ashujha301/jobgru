@@ -417,11 +417,30 @@ offer_linkedin_login() {
     return 0
   fi
 
-  if prompt_yn "Sign into LinkedIn now? Browser opens; press ENTER in terminal when done. [y/N]" n; then
-    "$PY" "$SCRIPTS/jobgru_mcp.py" login || true
-  else
+  if ! prompt_yn "Sign into LinkedIn now? Browser opens; press ENTER in terminal when done. [y/N]" n; then
     echo "Skipped. Run before LeadGru: jobgru mcp login"
+    return 0
   fi
+
+  local attempt=0
+  local max_attempts=3
+  while [[ $attempt -lt $max_attempts ]]; do
+    if "$PY" "$SCRIPTS/jobgru_mcp.py" login; then
+      echo "OK: LinkedIn login verified."
+      return 0
+    fi
+    echo ""
+    echo "LinkedIn login was not detected (browser closed early or sign-in incomplete)."
+    if prompt_yn "Try LinkedIn login again? [Y/n]" y; then
+      attempt=$((attempt + 1))
+      continue
+    fi
+    echo "Skipped. Run before LeadGru: jobgru mcp login"
+    return 0
+  done
+
+  echo "LinkedIn login not completed after $max_attempts attempts."
+  echo "Run later: jobgru mcp login"
 }
 
 run_final_check() {

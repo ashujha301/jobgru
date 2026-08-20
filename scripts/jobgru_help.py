@@ -66,6 +66,7 @@ TERMINAL commands:
   jobgru prompts --which example_linkedin_swe_bangalore
   jobgru filter --json        Filter catalog as JSON
   jobgru delete --rows 42-44    Delete rows and compact the sheet
+  jobgru ats --rows 42-44       Re-score ATS for specific rows only (overwrites I/J)
   jobgru update               Pull latest engine + refresh router skills
   jobgru uninstall            Remove global install
 
@@ -119,6 +120,7 @@ def help_json() -> dict:
             "jobgru prompts": "Example prompts to copy into chat",
             "jobgru prompts --which NAME": "One prompt block (template, example_linkedin_swe_bangalore, short_natural)",
             "jobgru delete --rows SPEC": "Delete rows (42, 42-44, 42,44-46)",
+            "jobgru ats --rows SPEC": "Re-score ATS for specific rows only (overwrites I/J)",
             "jobgru update": "Pull latest from GitHub",
             "jobgru uninstall": "Remove global install",
         },

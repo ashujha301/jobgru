@@ -8,6 +8,7 @@ from pathlib import Path
 
 BROWSER_PROFILE = Path.home() / ".jobgru" / "browser-profile"
 LOGIN_URL = "https://www.linkedin.com/login"
+FEED_URL = "https://www.linkedin.com/feed/"
 
 
 def _read_tty(prompt: str) -> None:
@@ -18,6 +19,33 @@ def _read_tty(prompt: str) -> None:
             tty.readline()
     except OSError:
         input(prompt)
+
+
+def linkedin_logged_in(context) -> bool:
+    """Return True when LinkedIn session cookie li_at is present."""
+    try:
+        cookies = context.cookies()
+    except Exception:
+        return False
+    for cookie in cookies:
+        if cookie.get("name") == "li_at" and cookie.get("value"):
+            return True
+    return False
+
+
+def verify_linkedin_session(context) -> bool:
+    """Confirm login via cookie and feed URL (not redirected to login)."""
+    if not linkedin_logged_in(context):
+        return False
+    try:
+        page = context.pages[0] if context.pages else context.new_page()
+        page.goto(FEED_URL, wait_until="domcontentloaded", timeout=30000)
+        url = page.url.lower()
+        if "/login" in url or "uas/login" in url:
+            return False
+        return linkedin_logged_in(context)
+    except Exception:
+        return linkedin_logged_in(context)
 
 
 def main() -> int:
@@ -63,15 +91,35 @@ def main() -> int:
                     return 1
                 continue
 
-        page = context.pages[0] if context.pages else context.new_page()
-        page.goto(LOGIN_URL, wait_until="domcontentloaded")
+        if context is None:
+            print("Could not launch browser.", file=sys.stderr)
+            return 1
 
-        _read_tty("\n>>> Press ENTER here after you have signed into LinkedIn... ")
+        try:
+            page = context.pages[0] if context.pages else context.new_page()
+            page.goto(LOGIN_URL, wait_until="domcontentloaded")
 
-        context.close()
+            _read_tty("\n>>> Press ENTER here after you have signed into LinkedIn... ")
+
+            if not verify_linkedin_session(context):
+                print("")
+                print("LinkedIn login was NOT detected.", file=sys.stderr)
+                print("Sign in fully (including MFA), then press ENTER — do not close the browser early.", file=sys.stderr)
+                context.close()
+                return 1
+
+            context.close()
+        except Exception as exc:
+            print(f"Browser closed or login check failed: {exc}", file=sys.stderr)
+            print("Keep the browser open, sign into LinkedIn, then press ENTER in the terminal.", file=sys.stderr)
+            try:
+                context.close()
+            except Exception:
+                pass
+            return 1
 
     print("")
-    print("OK: LinkedIn session saved.")
+    print("OK: LinkedIn session saved and verified.")
     print("Future Codex/Claude Playwright runs will reuse this login.")
     return 0
 

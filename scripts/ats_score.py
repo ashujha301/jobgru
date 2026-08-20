@@ -29,6 +29,7 @@ MANIFEST_PATH = RESUMES_DIR / "manifest.json"
 from sheets_write import (  # noqa: E402
     DEFAULT_SPREADSHEET_ID,
     DEFAULT_TAB,
+    parse_row_spec,
     read_range,
     sheets_service,
     write_range,
@@ -339,19 +340,26 @@ def read_job_rows(service, spreadsheet_id: str, tab: str) -> list[JobRow]:
 def eligible_rows(
     jobs: list[JobRow],
     *,
+    row_numbers: set[int] | None = None,
     row_range: tuple[int, int] | None = None,
     all_to_apply: bool = False,
     force: bool = False,
+    rescore: bool = False,
 ) -> list[JobRow]:
     eligible: list[JobRow] = []
     for job in jobs:
         if not job.company and not job.position:
             continue
-        if job.status != "to apply":
+        if row_numbers is not None:
+            if job.row_num not in row_numbers:
+                continue
+        elif job.status != "to apply":
             continue
         if job.ats_existing and not force:
             continue
-        if all_to_apply or row_range is None:
+        if rescore or row_numbers is not None:
+            eligible.append(job)
+        elif all_to_apply or row_range is None:
             eligible.append(job)
         elif row_range[0] <= job.row_num <= row_range[1]:
             eligible.append(job)
@@ -378,6 +386,13 @@ def cmd_sync(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_rescore(args: argparse.Namespace) -> int:
+    args.force = True
+    args.all = False
+    args.row_numbers = set(parse_row_spec(args.rows))
+    return cmd_score(args)
+
+
 def cmd_score(args: argparse.Namespace) -> int:
     resumes = load_resumes(args.resumes.split(",") if args.resumes else None)
     if not resumes:
@@ -395,9 +410,16 @@ def cmd_score(args: argparse.Namespace) -> int:
     service = sheets_service()
     jobs = read_job_rows(service, args.spreadsheet_id, args.tab)
 
-    row_range = parse_row_range(args.rows) if args.rows else None
+    row_numbers = getattr(args, "row_numbers", None)
+    row_range = parse_row_range(args.rows) if args.rows and row_numbers is None else None
+    rescore = getattr(args, "command", "") == "rescore"
     targets = eligible_rows(
-        jobs, row_range=row_range, all_to_apply=args.all, force=args.force
+        jobs,
+        row_numbers=row_numbers,
+        row_range=row_range,
+        all_to_apply=args.all,
+        force=args.force,
+        rescore=rescore,
     )
 
     scored_rows: list[int] = []
@@ -464,6 +486,19 @@ def build_parser() -> argparse.ArgumentParser:
     sync_p = sub.add_parser("sync", help="Refresh manifest.json from PDFs in data/resumes/")
     sync_p.add_argument("--dry-run", action="store_true", help="Show changes without writing manifest")
     sync_p.set_defaults(func=cmd_sync)
+
+    rescore_p = sub.add_parser(
+        "rescore",
+        help="Re-score specific rows only (overwrites column I/J)",
+    )
+    rescore_p.add_argument(
+        "--rows",
+        required=True,
+        help="Row numbers: 42 | 42,43 | 42-44 | 42,44-46",
+    )
+    rescore_p.add_argument("--resumes", help="Comma-separated resume ids from manifest (default: all)")
+    rescore_p.add_argument("--dry-run", action="store_true", help="Print summary without writing sheet")
+    rescore_p.set_defaults(func=cmd_rescore)
 
     return parser
 

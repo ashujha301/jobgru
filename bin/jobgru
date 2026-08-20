@@ -72,6 +72,21 @@ print('OK: sheet profile updated (O2, Q2-Q7)')
     [[ "$dry_run" -eq 1 ]] && args+=(--dry-run)
     (cd "$JOBGRU_HOME" && exec "$PY" "$SCRIPTS/sheets_write.py" "${args[@]}")
     ;;
+  ats)
+    rows=""
+    dry_run=0
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --rows) rows="$2"; shift 2 ;;
+        --dry-run) dry_run=1; shift ;;
+        *) die "Unknown option: $1" ;;
+      esac
+    done
+    [[ -n "$rows" ]] || die "Usage: jobgru ats --rows 42-44   (or 42,43,44 or 42,44-46)"
+    args=(rescore --rows "$rows")
+    [[ "$dry_run" -eq 1 ]] && args+=(--dry-run)
+    exec "$PY" "$SCRIPTS/ats_score.py" "${args[@]}"
+    ;;
   update)
     if [[ -d "$JOBGRU_HOME/.git" ]]; then
       git -C "$JOBGRU_HOME" pull --ff-only

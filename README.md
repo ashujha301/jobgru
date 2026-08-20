@@ -13,6 +13,43 @@ Works in **Cursor, Claude Code, Codex**, or any agent — install once, use `/jo
 
 ---
 
+## Prerequisites (before you install)
+
+Do these **once** on your machine before running the curl installer. The wizard will verify auth and skip steps you've already done.
+
+### 1. Install Google Cloud SDK (`gcloud`)
+
+Jobgru reads and writes your Google Sheet through the Cloud SDK.
+
+| Platform | Install |
+| --- | --- |
+| **Mac (Homebrew)** | `brew install --cask google-cloud-sdk` |
+| **Mac / Linux / Windows** | [cloud.google.com/sdk/docs/install](https://cloud.google.com/sdk/docs/install) |
+
+After install, open a **new terminal** and confirm:
+
+```bash
+gcloud --version
+```
+
+### 2. Sign in to Google (Sheets access)
+
+Use the Google account that will **own your sheet copy** (Editor/Owner):
+
+```bash
+gcloud auth login --enable-gdrive-access --update-adc
+```
+
+A browser opens — sign in and allow access. This saves credentials Jobgru uses for sheet read/write.
+
+### 3. Then run the installer
+
+Once `gcloud` works and auth is done, run the one-command setup below. The wizard will confirm auth, open the sheet template, verify your copy, and optionally sign into LinkedIn.
+
+**Also needed (usually already present):** Python 3.10+, `git`, `curl`, `bash`.
+
+---
+
 ## First-time setup — one command
 
 The installer walks you through everything interactively (gcloud, sheet, LinkedIn, check).
@@ -42,12 +79,13 @@ After WSL install + reboot, open **Ubuntu** once, then re-run the `irm` command.
 
 | Step | What happens | You do |
 | --- | --- | --- |
+| 0 | **Prerequisites** (above) | Install `gcloud` + run Google auth **before** curl |
 | 1 | Installs engine, skills, CLI, Playwright MCP | Wait |
 | 2 | Checks **Google Cloud SDK** (`gcloud`) | Install via Homebrew if offered, or install manually |
 | 3 | **Google sign-in** | Press **Y** → browser opens → sign in with your Google account |
 | 4 | **Google Sheet** | Press **Y** to open template → **File → Make a copy** → paste **your copy URL** |
 | 5 | Verifies sheet (tab, headers, formulas, write test) | Fix and retry if it fails |
-| 6 | **LinkedIn login** (Codex/Claude only) | Press **Y** → sign in → press **ENTER** in terminal |
+| 6 | **LinkedIn login** (Codex/Claude only) | Press **Y** → sign in → press **ENTER** in terminal (verified before continuing) |
 | 7 | Runs **`jobgru check`** | Should show **READY** (resume optional) |
 
 Every prompt accepts **skip** — you can finish later with `jobgru setup` / `jobgru mcp login`.
@@ -204,6 +242,7 @@ LeadGru backfill rows 42-43 — use Playwright MCP with my signed-in LinkedIn se
 | **Jobgru filter** | Filter catalog for job-search prompts |
 | **Jobgru prompts** | Example prompts to copy, edit, paste |
 | **Jobgru delete** | Delete sheet rows (42, 42-44, 42,43,44) |
+| **Jobgru ats** | Re-score ATS for specific rows (`jobgru ats --rows 42-44`) |
 | **/jobgru** + job search | Full pipeline (jobs → leads → ATS) |
 
 Prompts: [jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md) · [prompts.md](prompts/prompts.md) · [setup.md](prompts/setup.md) · [filter.md](prompts/filter.md)
@@ -216,6 +255,7 @@ Prompts: [jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/
 jobgru help          # all commands
 jobgru check         # is everything ready?
 jobgru setup --url "SHEET_URL" --name "Your Name"
+jobgru ats --rows 42-44    # re-score ATS for specific rows only (overwrites I/J)
 jobgru mcp status    # is Playwright MCP registered?
 jobgru mcp login     # sign into LinkedIn again
 jobgru filter        # all filter types
