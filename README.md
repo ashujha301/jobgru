@@ -13,54 +13,9 @@ Works in **Cursor, Claude Code, Codex**, or any agent — install once, use `/jo
 
 ---
 
-## First-time setup (step by step)
+## First-time setup — one command
 
-Follow these steps in order. Each one builds on the last.
-
-### Step 0 — What you need
-
-- An AI agent: **Cursor**, **Claude Code**, or **Codex CLI**
-- **Google Cloud SDK** — `gcloud` command works in terminal ([install](https://cloud.google.com/sdk/docs/install))
-- A **resume PDF** on your computer (optional but enables ATS scoring)
-- ~10 minutes
-
-### Step 1 — Copy the Google Sheet template
-
-1. Open the template (viewer access is fine — you only copy from it):
-
-   https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit
-
-2. **File → Make a copy**
-3. Tab name must stay **`Job Applications`**
-4. Save **your copy's URL** — you'll use it in Step 4
-
-> **Do not paste the template URL into Jobgru setup.** The template is read-only. Always use your own copy.
-
-#### Who can Jobgru write to the sheet?
-
-Jobgru writes through **your Google account** (`gcloud auth login`). That account must have **Editor** or **Owner** on the sheet — not Viewer, not Commenter.
-
-| Situation | What to do | Jobgru can write? |
-| --- | --- | --- |
-| **Template link** (above) | Copy only — never use in setup | No |
-| **Your copy** after File → Make a copy | You are **Owner** automatically | **Yes** |
-| Your copy stays **private** (only you) | Fine — Owner + same `gcloud` account | **Yes** |
-| **Someone else's sheet** shared with you as Viewer | Ask them to share you as **Editor** | No until you're Editor |
-| Your copy but **`gcloud auth` is a different account** | Re-auth with the sheet owner account | No |
-
-**You do NOT need** “Anyone with the link → Editor” for normal solo setup. After **Make a copy**, you already own the sheet.
-
-### Step 2 — Google auth (terminal, once)
-
-Sign in with the **same Google account** that owns your copied sheet:
-
-```bash
-gcloud auth login --enable-gdrive-access --update-adc
-```
-
-### Step 3 — Install Jobgru (terminal)
-
-One command — works from any directory:
+Run this in your terminal. The installer walks you through everything interactively:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
@@ -68,87 +23,39 @@ curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh |
 
 **Private repo:** you need git access to `github.com/ashujha301/jobgru`.
 
-This installs:
+### What the installer does (in order)
 
-- Engine at **`~/.jobgru`**
-- Router skill **`/jobgru`** in Cursor, Claude Code, and Codex
-- Terminal command **`jobgru`**
-- Playwright MCP for Claude Code and Codex (LeadGru browser)
+| Step | What happens | You do |
+| --- | --- | --- |
+| 1 | Installs engine, skills, CLI, Playwright MCP | Wait |
+| 2 | Checks **Google Cloud SDK** (`gcloud`) | Install via Homebrew if offered, or install manually |
+| 3 | **Google sign-in** | Press **Y** → browser opens → sign in with your Google account |
+| 4 | **Google Sheet** | Press **Y** to open template → **File → Make a copy** → paste **your copy URL** |
+| 5 | Verifies sheet (tab, headers, formulas, write test) | Fix and retry if it fails |
+| 6 | **LinkedIn login** (Codex/Claude only) | Press **Y** → sign in → press **ENTER** in terminal |
+| 7 | Runs **`jobgru check`** | Should show **READY** (resume optional) |
 
-When the installer asks **"Sign into LinkedIn now?"** → type **`y`**
+Every prompt accepts **skip** — you can finish later with `jobgru setup` / `jobgru mcp login`.
 
-- Browser opens → sign into LinkedIn (MFA ok)
-- **Press ENTER in the terminal** when done (don't close the browser yourself)
-
-If you skipped LinkedIn during install, run anytime:
-
-```bash
-jobgru mcp login
-```
-
-Session saves to **`~/.jobgru/browser-profile`** and is reused automatically.
-
-Update after each release: **`jobgru update`**
-
-### Step 4 — Connect your sheet (terminal)
-
-Replace with your copy URL and name:
+**Resume is optional during install.** Add it anytime:
 
 ```bash
-jobgru setup --url "https://docs.google.com/spreadsheets/d/YOUR_COPY_ID/edit" --name "Your Name"
+cp your-resume.pdf ~/.jobgru/data/resumes/
 ```
 
-Or in chat:
+Or in chat: `Jobgru add resume` (attach PDF).
 
-```text
-Jobgru setup — I copied the template. My sheet: <YOUR COPY URL>. My name: <YOUR NAME>
-```
+### After install — first job search
 
-### Step 5 — Add your resume (optional, for ATS scoring)
-
-Terminal:
-
-```bash
-mkdir -p ~/.jobgru/data/resumes
-cp /path/to/your/resume.pdf ~/.jobgru/data/resumes/
-```
-
-Or attach the PDF in chat and say:
-
-```text
-Jobgru add resume
-```
-
-### Step 6 — Health check (terminal)
-
-```bash
-jobgru check
-```
-
-You want **`READY`** at the end.
-
-| Check | Expected |
-| --- | --- |
-| `sheet_write` | OK |
-| `sheet_formulas` | OK |
-| `resume` | OK (after Step 5) or warn if skipped |
-| browser / MCP | registered for Codex / Claude Code |
-
-If anything fails, fix what `jobgru check` tells you before running a job search.
-
-### Step 7 — Run your first job search
-
-**Codex / Claude Code:** start a **new session** after install — MCP tools load only at session start.
-
-Simple test prompt:
+**Codex / Claude Code:** start a **new session** (MCP tools load at session start).
 
 ```text
 Find 3 software engineer jobs on LinkedIn in Bangalore. Add them to my Job Applications sheet.
 ```
 
-Or open [prompts/jobgru-run.md](prompts/jobgru-run.md), fill your filters, and paste into chat.
+Or open [prompts/jobgru-run.md](prompts/jobgru-run.md), fill filters, paste into chat.
 
-### Step 8 — What a successful run looks like
+### What a successful run looks like
 
 - New rows in your **Job Applications** Google Sheet
 - **ATSScore** filled (columns I & J) if resume is present
@@ -157,13 +64,78 @@ Or open [prompts/jobgru-run.md](prompts/jobgru-run.md), fill your filters, and p
 
 ---
 
+## Manual setup (fallback)
+
+Use this if you skipped steps during install or use a non-interactive terminal.
+
+<details>
+<summary>Click to expand manual steps</summary>
+
+### Prerequisites
+
+- AI agent: **Cursor**, **Claude Code**, or **Codex CLI**
+- **Google Cloud SDK** — [install](https://cloud.google.com/sdk/docs/install)
+- Resume PDF (optional, for ATS)
+
+### 1. Copy the Google Sheet template
+
+1. Open: https://docs.google.com/spreadsheets/d/18TQRl1dh0Ivdk8YbxkdiWb6__XkpHM32T1ohPTuMJ_4/edit
+2. **File → Make a copy** → tab must stay **`Job Applications`**
+3. Save **your copy's URL** (not the template URL)
+
+> Jobgru writes via **your Google account** (`gcloud auth`). That account must be **Editor/Owner** on the sheet.
+
+| Situation | Jobgru can write? |
+| --- | --- |
+| Template link | No — copy only |
+| Your copy after Make a copy | **Yes** (you are Owner) |
+| Someone else's sheet as Viewer | No — need Editor |
+
+### 2. Install Jobgru
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
+```
+
+Engine-only (skip wizard): append nothing — wizard runs by default. Developers: `./install.sh --local . --skip-setup`
+
+### 3. Google auth
+
+```bash
+gcloud auth login --enable-gdrive-access --update-adc
+```
+
+### 4. Connect sheet
+
+```bash
+jobgru setup --url "https://docs.google.com/spreadsheets/d/YOUR_COPY_ID/edit"
+```
+
+### 5. LinkedIn (Codex / Claude Code)
+
+```bash
+jobgru mcp login
+```
+
+### 6. Verify
+
+```bash
+jobgru check   # should show READY
+```
+
+</details>
+
+Update after each release: **`jobgru update`**
+
+---
+
 ## Browser setup by agent
 
 | Agent | Browser for LeadGru | Setup |
 | --- | --- | --- |
 | **Cursor** | Cursor Browser (built-in) | Sign into LinkedIn in Cursor before a pipeline run |
-| **Claude Code** | Playwright MCP | Step 3 above (`jobgru mcp login`) |
-| **Codex** | Playwright MCP | Step 3 above (`jobgru mcp login`) |
+| **Claude Code** | Playwright MCP | Installer or `jobgru mcp login` |
+| **Codex** | Playwright MCP | Installer or `jobgru mcp login` |
 
 **Jobs + ATS run without LinkedIn login.** Only LeadGru (LinkedIn contacts) needs a signed-in session.
 
@@ -232,11 +204,13 @@ jobgru uninstall     # remove global install
 
 Clone this repo and open in an agent. Skills live in `.cursor/skills/`. Same chat commands work; engine uses repo root instead of `~/.jobgru`.
 
-Local install from a clone:
+Local install from a clone (interactive wizard):
 
 ```bash
 ./install.sh --local /path/to/this/repo
 ```
+
+Skip wizard (engine only): `./install.sh --local . --skip-setup`
 
 See [AGENTS.md](AGENTS.md) and [docs/SETUP.md](docs/SETUP.md).
 

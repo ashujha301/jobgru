@@ -25,13 +25,25 @@ def help_text() -> str:
 
 Install: ~/.jobgru ({mode} mode) · Template: {TEMPLATE_URL}
 
-YOU do (2 manual steps):
-  1. Copy template → File → Make a copy → tab must stay "Job Applications"
-     Template = viewer (copy only). Use YOUR copy URL in setup, not the template.
-     After copy you are Owner — private sheet is OK. No "anyone with link → Editor" needed solo.
-     Jobgru writes via gcloud account — that account must be Editor/Owner (not Viewer).
-  2. Terminal auth (use the Google account that owns / can edit the sheet):
-     gcloud auth login --enable-gdrive-access --update-adc
+FIRST TIME — one command (interactive wizard):
+  curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
+
+  The installer walks you through:
+    • gcloud install + Google sign-in
+    • Open sheet template → Make a copy → paste YOUR copy URL
+    • Verify sheet (tab, headers, write test)
+    • LinkedIn login for LeadGru (Codex/Claude)
+    • jobgru check → READY
+
+  Resume (optional): cp resume.pdf to {HOME}/data/resumes/
+  Skip wizard: ./install.sh --local . --skip-setup
+
+MANUAL fallback (if you skipped steps):
+  1. Copy template → File → Make a copy → tab "Job Applications"
+  2. gcloud auth login --enable-gdrive-access --update-adc
+  3. jobgru setup --url YOUR_COPY_URL
+  4. jobgru mcp login   (Codex/Claude)
+  5. jobgru check
 
 CHAT commands (Cursor / Claude Code / Codex — any folder):
   Jobgru setup     First-time config (sheet URL, name, resume PDF)
@@ -77,9 +89,13 @@ def help_json() -> dict:
         "template_sheet_url": TEMPLATE_URL,
         "jobgru_home": str(HOME),
         "install_mode": get_install_mode(),
+        "install_wizard": "curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash",
         "manual_steps": [
             "Copy Google Sheet template (tab: Job Applications)",
             "gcloud auth login --enable-gdrive-access --update-adc",
+            "jobgru setup --url YOUR_COPY_URL",
+            "jobgru mcp login (Codex/Claude)",
+            "jobgru check",
         ],
         "chat_commands": {
             "Jobgru setup": "Configure sheet URL, name, resume PDF",

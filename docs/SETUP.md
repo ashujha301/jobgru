@@ -1,8 +1,37 @@
 # Jobgru — setup reference and troubleshooting
 
-**Start here:** [README.md](../README.md) — two manual steps + chat commands.
+**Start here:** [README.md](../README.md) — one `curl | bash` command runs the interactive setup wizard.
 
-This doc is for troubleshooting and technical detail. You do not need to read it for first-time setup.
+This doc is for troubleshooting and technical detail.
+
+---
+
+## Interactive installer wizard
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ashujha301/jobgru/main/install.sh | bash
+```
+
+The installer prompts you through (each step skippable):
+
+1. Engine + venv + router skills + `jobgru` CLI + Playwright MCP
+2. **gcloud** — offers Homebrew install on macOS if missing
+3. **Google auth** — `gcloud auth login --enable-gdrive-access --update-adc`
+4. **Sheet** — opens template in browser, waits for your copy URL, validates tab/headers/formulas/write
+5. **LinkedIn** — `jobgru mcp login` (Codex/Claude; Cursor uses built-in browser)
+6. **`jobgru check`** — should show READY (resume optional)
+
+Skip the wizard (engine only):
+
+```bash
+./install.sh --local /path/to/repo --skip-setup
+```
+
+Verify a configured sheet without full check:
+
+```bash
+~/.jobgru/.venv/bin/python ~/.jobgru/scripts/jobgru_verify_sheet.py
+```
 
 ---
 
