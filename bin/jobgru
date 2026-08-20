@@ -13,6 +13,12 @@ die() { echo "jobgru: $*" >&2; exit 1; }
 cmd="${1:-}"
 shift || true
 
+# Run JSON logs are not the sheet. Drop files older than 6 days whenever
+# the CLI is used — does not depend on the chat skill running.
+if [[ "$cmd" != "uninstall" && -x "$PY" && -f "$SCRIPTS/jobgru_runs.py" ]]; then
+  "$PY" "$SCRIPTS/jobgru_runs.py" prune --days 6 >/dev/null 2>&1 || true
+fi
+
 case "$cmd" in
   check)
     exec "$PY" "$SCRIPTS/jobgru_check.py" "$@"

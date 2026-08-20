@@ -519,6 +519,12 @@ def check_resume_manifest(report: Report) -> None:
 
 
 def run_all_checks() -> Report:
+    try:
+        from jobgru_runs import prune_old_runs
+
+        prune_old_runs()
+    except Exception:
+        pass
     report = Report()
     check_install_mode(report)
     check_python(report)
