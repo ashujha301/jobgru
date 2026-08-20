@@ -83,7 +83,7 @@ Show every filter type the user can put in a job-search prompt (plain English + 
 
 Or: `jobgru filter`
 
-Print the full catalog — do not show saved config. User picks values and writes a natural prompt, or fills [prompts/jobgru-run.md](../../prompts/jobgru-run.md).
+Print the full catalog and point to [prompts/jobgru-run.md](../../prompts/jobgru-run.md) for the copy-paste example template.
 
 ---
 

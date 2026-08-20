@@ -174,12 +174,21 @@ def catalog_text() -> str:
         lines.append("")
     lines.extend(
         [
-            "Example (natural prompt):",
-            '  Jobgru — find 3 Software Engineer jobs on LinkedIn only in Bangalore.',
-            "  Include SWE AI. Exclude Data Scientist and Data Engineer.",
-            "  Don't skip similar roles if experience matches.",
+            "Example prompt (copy and edit — full template: prompts/jobgru-run.md):",
             "",
-            "Full template: prompts/jobgru-run.md",
+            "  Jobgru",
+            "",
+            "  Count: 3",
+            "  Boards: LinkedIn",
+            "  Roles: Software Engineer, SWE AI",
+            "  Location: Bangalore",
+            "  Experience: 0–4 years",
+            "  Exclude: Data Scientist, Data Engineer",
+            "  Staffing agencies: no",
+            "  ATS scoring: yes",
+            "",
+            "On/off: Staffing agencies and ATS scoring — yes or no.",
+            "Plain English also works: Find 3 SWE jobs on LinkedIn in Bangalore.",
         ]
     )
     return "\n".join(lines)

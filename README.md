@@ -55,7 +55,7 @@ Or in chat: `Jobgru add resume` (attach PDF).
 Find 3 software engineer jobs on LinkedIn in Bangalore. Add them to my Job Applications sheet.
 ```
 
-Or open [prompts/jobgru-run.md](prompts/jobgru-run.md), fill filters, paste into chat.
+Or copy the example from [prompts/jobgru-run.md](prompts/jobgru-run.md), edit filters, paste into chat.
 
 ### What a successful run looks like
 
@@ -178,7 +178,7 @@ LeadGru backfill rows 42-43 — use Playwright MCP with my signed-in LinkedIn se
 | **Jobgru help** | Full command guide (setup, check, mcp, filter, delete, pipeline) |
 | **Jobgru check** | Verify everything is ready |
 | **Jobgru mcp** | Install/check Playwright MCP (Claude + Codex browser) |
-| **Jobgru filter** | List all filter types for job-search prompts |
+| **Jobgru filter** | Filter catalog + example prompt |
 | **Jobgru delete** | Delete sheet rows (42, 42-44, 42,43,44) |
 | **/jobgru** + job search | Full pipeline (jobs → leads → ATS) |
 

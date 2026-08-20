@@ -50,7 +50,7 @@ CHAT commands (Cursor / Claude Code / Codex — any folder):
   Jobgru help      Show this guide
   Jobgru check     Verify setup is READY
   Jobgru mcp       Install/check Playwright MCP (Claude + Codex browser)
-  Jobgru filter    List every filter type you can use in a job-search prompt
+  Jobgru filter    List filter types + example prompt template
   Jobgru delete    Delete sheet rows (e.g. rows 42-44 or 42,43,44)
   /jobgru + search Run full pipeline (jobs → leads → ATS)
 
@@ -60,7 +60,7 @@ TERMINAL commands:
   jobgru mcp install          Register Playwright MCP (Claude + Codex)
   jobgru mcp login            Open LinkedIn login in the Jobgru browser (one time)
   jobgru mcp status           Browser/MCP status
-  jobgru filter               List all filter types for job-search prompts
+  jobgru filter               Filter catalog + example prompt (prompts/jobgru-run.md)
   jobgru filter --json        Same catalog as JSON
   jobgru delete --rows 42-44    Delete rows and compact the sheet
   jobgru update               Pull latest engine + refresh router skills
@@ -102,7 +102,7 @@ def help_json() -> dict:
             "Jobgru help": "Show full command guide",
             "Jobgru check": "Health check — must show READY before pipeline",
             "Jobgru mcp": "Install or verify Playwright MCP (Claude/Codex)",
-            "Jobgru filter": "List all filter types for job-search prompts",
+            "Jobgru filter": "Filter catalog + example prompt template",
             "Jobgru delete": "Delete rows from sheet (single, list, or range)",
             "/jobgru + search": "Full pipeline: Jobgru + LeadGru + ATSScore",
         },

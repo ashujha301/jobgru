@@ -227,18 +227,21 @@ See [data/resumes/README.md](../data/resumes/README.md)
 
 ## Prompt filters (pipeline runs)
 
-Use in [prompts/jobgru-run.md](../prompts/jobgru-run.md):
+Copy and edit [prompts/jobgru-run.md](../prompts/jobgru-run.md), or run `jobgru filter` for the full catalog.
 
 | Filter | Examples |
 | --- | --- |
+| Count | 3, 10, up to 30 |
+| Boards | LinkedIn only, LinkedIn + Wellfound |
 | Role/domain | AI Engineer, Backend Engineer |
-| Location | Bangalore, remote India |
-| Work arrangement | remote / hybrid / onsite |
+| Similar roles | include Full Stack if stack matches |
+| Location | Bangalore, India |
+| Work | remote / hybrid / onsite |
 | Experience | 0–4 years |
-| Visa sponsorship | required / irrelevant |
-| Required skills | Python, FastAPI, LLMs |
-| Excluded roles | internships, 5+ years senior |
-| Maximum posting age | 30 days |
+| Skills | Python, FastAPI, LLMs |
+| Exclude | Data Scientist, internships |
+| Posting age | 30 days |
+| Staffing agencies | yes / no |
 | ATS scoring | yes / no |
 
 ---
