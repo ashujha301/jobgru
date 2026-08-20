@@ -1,0 +1,45 @@
+{
+  "board": "RemoteOK",
+  "board_id": "remoteok",
+  "status": "active",
+  "discovered_at": "2026-08-20",
+  "last_ok": "2026-08-20",
+  "min_links": 3,
+  "verify": "webfetch_listing",
+  "search_urls": [
+    "https://remoteok.com/remote-{KEYWORD_SLUG}-jobs",
+    "https://remoteok.com/remote-backend-jobs",
+    "https://remoteok.com/remote-engineer-jobs"
+  ],
+  "keyword_slug_map": {
+    "Backend Engineer": "backend",
+    "Software Engineer": "engineer",
+    "Full Stack Engineer": "full-stack",
+    "Frontend Engineer": "front-end",
+    "AI Engineer": "ai",
+    "ML Engineer": "machine-learning",
+    "DevOps Engineer": "devops",
+    "Python Developer": "python",
+    "JavaScript Developer": "javascript"
+  },
+  "param_reference": {
+    "location": "region filter chips in UI; URL form remoteok.com/remote-{tag}-jobs?location=IN for country",
+    "min_salary": "?min_salary=50000 (USD/year)",
+    "order_by": "default is latest-first"
+  },
+  "fallback_urls": [
+    "https://remoteok.com/remote-dev-jobs"
+  ],
+  "extract_js": "Array.from(document.querySelectorAll('a[href*=\"/remote-jobs/\"]')).map(a => ({ href: a.href.split('?')[0], title: a.innerText?.slice(0, 120) || '' })).filter(x => /\\/remote-jobs\\/(remote-)?[a-z0-9-]*\\d/.test(x.href)).reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, []).slice(0, 20)",
+  "link_pattern": "/remote-jobs/{id}-",
+  "rules": [
+    "Use tag slugs, not free text — map prompt roles via keyword_slug_map (one slug per URL)",
+    "All jobs are remote — check listing body for region restriction (Worldwide vs US-only etc.)",
+    "Salary shown is employer-entered — verify inside listing before writing Pay to Details",
+    "Verify finalists with WebFetch; WebFetch works without login"
+  ],
+  "notes": [
+    "Seeded 2026-08-20 — tag page verified live (remote-backend-jobs, 626 results)",
+    "High volume aggregator; also exposes public JSON API at remoteok.com/api if page scrape is thin"
+  ]
+}

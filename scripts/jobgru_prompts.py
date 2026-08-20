@@ -12,8 +12,11 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from jobgru_filters import (  # noqa: E402
+    EXAMPLE_REMOTE_PROMPT_VALUES,
     RUN_LIMITS,
     SHORT_NATURAL_PROMPT,
+    SUPPORTED_BOARDS,
+    build_prompt,
     prompt_example,
     prompt_template,
 )
@@ -23,6 +26,7 @@ GITHUB_PROMPTS_URL = "https://github.com/ashujha301/jobgru/blob/main/prompts/job
 PROMPT_LABELS = (
     "template",
     "example_linkedin_swe_bangalore",
+    "example_remote_boards",
     "short_natural",
 )
 
@@ -31,6 +35,7 @@ def load_prompt_blocks() -> dict[str, str]:
     return {
         "template": prompt_template(),
         "example_linkedin_swe_bangalore": prompt_example(),
+        "example_remote_boards": build_prompt(EXAMPLE_REMOTE_PROMPT_VALUES),
         "short_natural": SHORT_NATURAL_PROMPT,
     }
 
@@ -43,6 +48,9 @@ def prompts_text(blocks: dict[str, str]) -> str:
         "One prompt runs the full pipeline: jobs → leads → ATS.",
         f"Limits: max {RUN_LIMITS['max_jobs_per_run']} jobs/run, LinkedIn max {RUN_LIMITS['max_linkedin_per_run']}/run.",
         "",
+        f"Boards with runbooks: {', '.join(SUPPORTED_BOARDS)}",
+        "(other boards work too — discovered on first use)",
+        "",
         "1) TEMPLATE — all filters (edit values, paste into chat)",
         "-" * 34,
         blocks["template"],
@@ -51,7 +59,11 @@ def prompts_text(blocks: dict[str, str]) -> str:
         "-" * 34,
         blocks["example_linkedin_swe_bangalore"],
         "",
-        "3) SHORT — natural language (also works)",
+        "3) EXAMPLE — remote-only across remote boards",
+        "-" * 34,
+        blocks["example_remote_boards"],
+        "",
+        "4) SHORT — natural language (also works)",
         "-" * 34,
         blocks["short_natural"],
         "",
@@ -65,6 +77,7 @@ def prompts_json(blocks: dict[str, str]) -> dict:
     return {
         "prompts": blocks,
         "run_limits": RUN_LIMITS,
+        "supported_boards": SUPPORTED_BOARDS,
         "github_url": GITHUB_PROMPTS_URL,
         "filter_command": "jobgru filter",
     }

@@ -28,6 +28,7 @@ FILTER_CATALOG: list[dict] = [
         "examples": [
             "LinkedIn only",
             "LinkedIn and Wellfound",
+            "remote boards: RemoteOK + We Work Remotely + Remote Rocketship",
             "mix: LinkedIn + Indeed + YC Jobs",
         ],
         "modes": [
@@ -35,7 +36,20 @@ FILTER_CATALOG: list[dict] = [
             "Multiple — same search across several boards in parallel",
             "Mix & match — pick any combination you name in the prompt",
         ],
-        "limits": "LinkedIn max 25 jobs per run (rate-limit safety). Other boards share the remaining quota up to 50 total.",
+        "supported_boards": [
+            "LinkedIn",
+            "Wellfound",
+            "Remote Rocketship",
+            "DailyRemote",
+            "RemoteOK",
+            "We Work Remotely",
+            "Remotive",
+            "Himalayas",
+            "Working Nomads",
+            "Indeed",
+            "YC Jobs",
+        ],
+        "limits": "LinkedIn max 25 jobs per run (rate-limit safety). Other boards share the remaining quota up to 50 total. Runbooks in data/board-runbooks/ — other boards work via discovery mode.",
     },
     {
         "id": "roles",
@@ -190,6 +204,40 @@ SHORT_NATURAL_PROMPT = (
     "Exclude Data Scientist. Run ATS scoring."
 )
 
+SUPPORTED_BOARDS: list[str] = [
+    "LinkedIn",
+    "Wellfound",
+    "Remote Rocketship",
+    "DailyRemote",
+    "RemoteOK",
+    "We Work Remotely",
+    "Remotive",
+    "Himalayas",
+    "Working Nomads",
+    "Indeed",
+    "YC Jobs",
+]
+
+EXAMPLE_REMOTE_PROMPT_VALUES: dict[str, str] = {
+    "count": "5",
+    "sources": "RemoteOK, We Work Remotely, Remote Rocketship",
+    "roles": "Backend Engineer, Software Engineer",
+    "role_variants": "include Full Stack if backend-heavy",
+    "location": "remote",
+    "remote_restriction": "worldwide or India-eligible",
+    "work_arrangement": "remote only",
+    "experience": "1–4 years",
+    "visa": "irrelevant",
+    "required_skills": "Python, FastAPI, PostgreSQL",
+    "excluded_roles": "Data Scientist, Support Engineer",
+    "min_compensation": "not required",
+    "employment_type": "full-time only",
+    "max_posting_age": "14 days",
+    "exclude_staffing_agencies": "no",
+    "ats_scoring": "yes",
+    "note": "check each listing's region eligibility before including",
+}
+
 
 def build_prompt(values: dict[str, str] | None = None, *, blank: bool = False) -> str:
     """Build a Jobgru prompt block from filter fields."""
@@ -244,6 +292,8 @@ def catalog_text() -> str:
             lines.append("   Boards — pick one style:")
             for mode in item["modes"]:
                 lines.append(f"     • {mode}")
+        if item.get("supported_boards"):
+            lines.append(f"   Boards with runbooks: {', '.join(item['supported_boards'])}")
         if item.get("limits"):
             lines.append(f"   Limit: {item['limits']}")
         if item.get("examples"):

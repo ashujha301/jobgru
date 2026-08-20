@@ -1,0 +1,40 @@
+{
+  "board": "DailyRemote",
+  "board_id": "dailyremote",
+  "status": "active",
+  "discovered_at": "2026-08-20",
+  "last_ok": "2026-08-20",
+  "min_links": 3,
+  "verify": "webfetch_listing",
+  "search_urls": [
+    "https://dailyremote.com/remote-software-development-jobs",
+    "https://dailyremote.com/remote-jobs-search?term={KEYWORD}"
+  ],
+  "category_pages": {
+    "software-development": "https://dailyremote.com/remote-software-development-jobs",
+    "design": "https://dailyremote.com/remote-design-jobs",
+    "data-entry": "https://dailyremote.com/remote-data-entry-jobs",
+    "marketing": "https://dailyremote.com/remote-marketing-jobs",
+    "product": "https://dailyremote.com/remote-product-jobs"
+  },
+  "filter_reference": {
+    "experience": "0-2 years / 2-5 years / 5-10 years / 10+ (UI filter)",
+    "work_mode": "Remote only / Hybrid / both (UI filter)",
+    "job_type": "Full Time / Part Time / Internship (UI filter)"
+  },
+  "fallback_urls": [
+    "https://dailyremote.com/remote-software-development-jobs?sort=latest"
+  ],
+  "extract_js": "Array.from(document.querySelectorAll('a[href*=\"/remote-job/\"]')).map(a => ({ href: a.href.split('?')[0], title: a.innerText?.slice(0, 120) || '' })).reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, []).slice(0, 20)",
+  "link_pattern": "/remote-job/",
+  "rules": [
+    "Category pages are the reliable entry point — pick the category matching prompt roles",
+    "Keyword search exists but filters (experience, work mode) are UI-driven — apply them via browser, not URL, when needed",
+    "Fresh listings emphasized (24h turnaround) — good for Posting age <= 7 days prompts",
+    "Verify finalists with WebFetch"
+  ],
+  "notes": [
+    "Seeded 2026-08-20 — category page verified live (55k+ software dev jobs listed)",
+    "Patch extract_js / search URL param on first live run if selector drift"
+  ]
+}

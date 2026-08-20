@@ -1,0 +1,36 @@
+{
+  "board": "Remote Rocketship",
+  "board_id": "remote-rocketship",
+  "status": "active",
+  "discovered_at": "2026-08-20",
+  "last_ok": "2026-08-20",
+  "min_links": 3,
+  "verify": "webfetch_listing",
+  "search_urls": [
+    "https://www.remoterocketship.com/?page=1&sort=DateAdded&jobTitle={KEYWORD}",
+    "https://www.remoterocketship.com/?page=2&sort=DateAdded&jobTitle={KEYWORD}"
+  ],
+  "param_reference": {
+    "jobTitle": "URL-encoded role, e.g. Backend+Developer, Software+Engineer",
+    "page": "pagination, 1-based",
+    "sort": "DateAdded = newest first",
+    "locations": "optional country/region filter, e.g. India, Worldwide",
+    "seniority": "optional: junior, mid, senior"
+  },
+  "fallback_urls": [
+    "https://www.remoterocketship.com/?page=1&sort=DateAdded&jobTitle={KEYWORD}&locations=Worldwide"
+  ],
+  "extract_js": "Array.from(document.querySelectorAll('a[href*=\"/company/\"]')).map(a => ({ href: a.href.split('?')[0], title: a.innerText?.slice(0, 120) || '' })).filter(x => /\\/company\\/[^/]+\\/jobs\\//.test(x.href)).reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, []).slice(0, 20)",
+  "link_pattern": "/company/{slug}/jobs/",
+  "rules": [
+    "Substitute {KEYWORD} with URL-encoded role (+ for spaces), one keyword group per URL",
+    "All listings are remote by default — add locations= only when prompt restricts region",
+    "Some listings link out to company ATS — column C should be the final apply URL after verification",
+    "Verify finalists with WebFetch; site is WebFetch-friendly (no login wall)"
+  ],
+  "notes": [
+    "Seeded 2026-08-20 — search URL pattern verified live (jobTitle/page/sort params)",
+    "Patch extract_js on first run if selector drift",
+    "Aggregator: 190k+ jobs, claims many not on LinkedIn — good LinkedIn complement"
+  ]
+}

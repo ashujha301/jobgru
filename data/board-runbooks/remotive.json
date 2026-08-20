@@ -1,0 +1,35 @@
+{
+  "board": "Remotive",
+  "board_id": "remotive",
+  "status": "active",
+  "discovered_at": "2026-08-20",
+  "last_ok": "2026-08-20",
+  "min_links": 3,
+  "verify": "webfetch_listing",
+  "search_urls": [
+    "https://remotive.com/remote-jobs/software-development",
+    "https://remotive.com/remote-jobs/software-development?search={KEYWORD}"
+  ],
+  "category_pages": {
+    "software-development": "https://remotive.com/remote-jobs/software-development",
+    "devops": "https://remotive.com/remote-jobs/devops",
+    "data": "https://remotive.com/remote-jobs/data",
+    "product": "https://remotive.com/remote-jobs/product",
+    "design": "https://remotive.com/remote-jobs/design"
+  },
+  "fallback_urls": [
+    "https://remotive.com/remote-jobs?search={KEYWORD}"
+  ],
+  "extract_js": "Array.from(document.querySelectorAll('a[href*=\"/remote-jobs/\"]')).map(a => ({ href: a.href.split('?')[0], title: a.innerText?.slice(0, 120) || '' })).filter(x => /\\/remote-jobs\\/[a-z-]+\\/[a-z0-9-]+-\\d+$/.test(x.href)).reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, []).slice(0, 20)",
+  "link_pattern": "/remote-jobs/{category}/{slug}-{id}",
+  "rules": [
+    "Free tier hides company names on newer listings ('[Company Name]') — open the listing page to get the real company before writing column A",
+    "If listing page still hides the company, exclude the job — never write '[Company Name]' to the sheet",
+    "Career level filter exists in UI (junior/mid/senior) — match Experience prompt filter from listing text",
+    "Verify finalists with WebFetch; no login wall for listing pages"
+  ],
+  "notes": [
+    "Seeded 2026-08-20 — category page verified live (1,400+ posted today)",
+    "Curated tech/startup board; some volume gated behind premium — expect fewer usable rows than aggregators"
+  ]
+}

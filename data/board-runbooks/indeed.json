@@ -3,19 +3,23 @@
   "board_id": "indeed",
   "status": "no_runbook_yet",
   "min_links": 3,
-  "verify": "webfetch_listing",
+  "verify": "browser_listing",
   "search_urls": [],
   "fallback_urls": [],
   "extract_js": "",
   "discovery": {
     "max_navigates": 5,
     "hints": [
-      "Try https://in.indeed.com/jobs?q={KEYWORD}&l={LOCATION}&fromage=30",
-      "Remote filter via sc= param if available",
-      "Extract links matching /viewjob or jk= pattern"
+      "Try https://in.indeed.com/jobs?q={KEYWORD}&l={LOCATION}&fromage=30 (fromage = max posting age in days)",
+      "Remote filter: &sc=0kf%3Aattr%28DSQF7%29%3B or l=Remote",
+      "Job links match /viewjob?jk={id} or /rc/clk patterns — normalize to https://in.indeed.com/viewjob?jk={id}",
+      "Country domains: in.indeed.com (India), www.indeed.com (US) — pick from prompt Location",
+      "Aggressive Cloudflare/anti-bot: WebFetch is usually blocked — use real browser tools; back off on CAPTCHA"
     ]
   },
   "rules": [
+    "WebFetch verification often blocked — verify finalists with browser listing page",
+    "Stop the board immediately on CAPTCHA or verification challenge; report unavailable",
     "On first successful discovery, set status to active and populate search_urls + extract_js",
     "Do not save runbook until >= min_links found"
   ]

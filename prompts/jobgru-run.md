@@ -12,6 +12,30 @@ Limits: **50 jobs max per run**, **25 max from LinkedIn**.
 
 ---
 
+## Supported job boards (runbooks included)
+
+Name any of these on the `Boards:` line — Jobgru has a navigation runbook for each:
+
+| Board | Focus |
+| --- | --- |
+| **LinkedIn** | All roles, all locations (max 25/run) |
+| **Wellfound** | Startups |
+| **Remote Rocketship** | Remote — aggregator, 190k+ jobs, many not on LinkedIn |
+| **DailyRemote** | Remote — fresh listings, updated daily |
+| **RemoteOK** | Remote — high volume, salary tags |
+| **We Work Remotely** | Remote — largest dedicated remote board |
+| **Remotive** | Remote — curated tech/startup roles |
+| **Himalayas** | Remote — salary transparency + country eligibility |
+| **Working Nomads** | Remote — browse by region incl. Anywhere |
+| **Indeed** | All roles — country domains (in.indeed.com etc.) |
+| **YC Jobs** | Startups — Work at a Startup |
+
+Other boards also work — Jobgru discovers navigation on first use.
+
+**Remote-only example:** `Boards: RemoteOK, We Work Remotely, Remote Rocketship`
+
+---
+
 ## Template (edit and paste)
 
 Every filter — leave a line blank if you do not care.
@@ -84,6 +108,32 @@ Posting age: 30 days
 Staffing agencies: no
 ATS scoring: yes
 Note: don't skip if experience matches for similar roles
+```
+
+---
+
+## Example — remote-only across remote boards
+
+```text
+Jobgru
+
+Count: 5
+Boards: RemoteOK, We Work Remotely, Remote Rocketship
+Roles: Backend Engineer, Software Engineer
+Similar roles: include Full Stack if backend-heavy
+Location: remote
+Remote restriction: worldwide or India-eligible
+Work: remote only
+Experience: 1–4 years
+Visa sponsorship: irrelevant
+Skills: Python, FastAPI, PostgreSQL
+Exclude: Data Scientist, Support Engineer
+Minimum compensation: not required
+Employment type: full-time only
+Posting age: 14 days
+Staffing agencies: no
+ATS scoring: yes
+Note: check each listing's region eligibility before including
 ```
 
 ---

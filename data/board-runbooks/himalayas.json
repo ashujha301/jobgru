@@ -1,0 +1,29 @@
+{
+  "board": "Himalayas",
+  "board_id": "himalayas",
+  "status": "no_runbook_yet",
+  "min_links": 3,
+  "verify": "browser_listing",
+  "search_urls": [],
+  "fallback_urls": [],
+  "extract_js": "",
+  "discovery": {
+    "max_navigates": 5,
+    "hints": [
+      "Cloudflare bot check blocks WebFetch (verified 2026-08-20) — use real browser tools only",
+      "Try https://himalayas.app/jobs/engineering or https://himalayas.app/jobs?search={KEYWORD}",
+      "Job links look like /companies/{company}/jobs/{slug}",
+      "Every listing carries an explicit country requirement — use it for Remote restriction filter",
+      "Worldwide-only section exists for roles with no country restriction"
+    ]
+  },
+  "rules": [
+    "WebFetch verification will fail (Cloudflare) — verify finalists with browser listing page instead",
+    "On first successful discovery, set status to active and populate search_urls + extract_js",
+    "Do not save runbook until >= min_links found"
+  ],
+  "notes": [
+    "Strong salary transparency and per-country eligibility labels — good when prompt has Remote restriction",
+    "20k+ active remote positions from verified companies (2026)"
+  ]
+}

@@ -210,8 +210,17 @@ Bounded to **max 5 navigates + 1 CDP per page**:
 | --- | --- | --- |
 | `linkedin-jobs` | `data/board-runbooks/linkedin-jobs.json` | f_WT, f_E, f_TPR filters; `/jobs/view/` extract |
 | `wellfound` | `data/board-runbooks/wellfound.json` | `/role/l/{slug}/india`; company `/jobs` deep-dive |
-| `indeed` | `data/board-runbooks/indeed.json` | stub — discovery on first use |
+| `remote-rocketship` | `data/board-runbooks/remote-rocketship.json` | `?jobTitle={KEYWORD}&sort=DateAdded`; remote aggregator |
+| `dailyremote` | `data/board-runbooks/dailyremote.json` | category pages + search; fresh 24h listings |
+| `remoteok` | `data/board-runbooks/remoteok.json` | `/remote-{slug}-jobs` tag pages; salary tags |
+| `weworkremotely` | `data/board-runbooks/weworkremotely.json` | `search?term=`; Region field per listing |
+| `remotive` | `data/board-runbooks/remotive.json` | category pages; free tier hides some company names |
+| `himalayas` | `data/board-runbooks/himalayas.json` | stub — Cloudflare blocks WebFetch, browser only |
+| `working-nomads` | `data/board-runbooks/working-nomads.json` | stub — discovery on first use |
+| `indeed` | `data/board-runbooks/indeed.json` | stub — anti-bot, browser only |
 | `yc-jobs` | `data/board-runbooks/yc-jobs.json` | stub — discovery on first use |
+
+**Remote-first prompts:** when the prompt says remote / work-from-home and names no boards, prefer active remote boards (Remote Rocketship, RemoteOK, We Work Remotely, DailyRemote, Remotive) alongside LinkedIn — they share the non-LinkedIn quota.
 
 ---
 

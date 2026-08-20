@@ -1,0 +1,37 @@
+{
+  "board": "We Work Remotely",
+  "board_id": "weworkremotely",
+  "status": "active",
+  "discovered_at": "2026-08-20",
+  "last_ok": "2026-08-20",
+  "min_links": 3,
+  "verify": "webfetch_listing",
+  "search_urls": [
+    "https://weworkremotely.com/remote-jobs/search?term={KEYWORD}",
+    "https://weworkremotely.com/categories/remote-back-end-programming-jobs",
+    "https://weworkremotely.com/categories/remote-full-stack-programming-jobs"
+  ],
+  "category_pages": {
+    "back-end": "https://weworkremotely.com/categories/remote-back-end-programming-jobs",
+    "front-end": "https://weworkremotely.com/categories/remote-front-end-programming-jobs",
+    "full-stack": "https://weworkremotely.com/categories/remote-full-stack-programming-jobs",
+    "devops-sysadmin": "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs",
+    "programming-all": "https://weworkremotely.com/categories/remote-programming-jobs"
+  },
+  "fallback_urls": [
+    "https://weworkremotely.com/remote-jobs/search?term={KEYWORD}&region=Anywhere+in+the+World"
+  ],
+  "extract_js": "Array.from(document.querySelectorAll('a[href*=\"/remote-jobs/\"], a[href*=\"/listings/\"]')).map(a => ({ href: a.href.split('?')[0], title: a.innerText?.slice(0, 120) || '' })).filter(x => !x.href.includes('/search') && /\\/(remote-jobs|listings)\\/[a-z0-9-]{10,}/.test(x.href)).reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, []).slice(0, 20)",
+  "link_pattern": "/remote-jobs/{slug} or /listings/{slug}",
+  "region_field": "Every listing publishes a Region (e.g. 'Anywhere in the World', 'Asia Only') — use it for Remote restriction filter",
+  "rules": [
+    "Search term with + for spaces; category pages when roles map cleanly",
+    "Check the Region field on each listing against the prompt's Remote restriction before including",
+    "Employers pay to post — low spam, but volume is lower than aggregators",
+    "Verify finalists with WebFetch; no login wall"
+  ],
+  "notes": [
+    "Seeded 2026-08-20 — search URL verified live (term=backend+engineer)",
+    "Largest dedicated remote board; strongest for engineering/design roles"
+  ]
+}

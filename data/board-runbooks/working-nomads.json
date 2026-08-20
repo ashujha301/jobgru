@@ -1,0 +1,26 @@
+{
+  "board": "Working Nomads",
+  "board_id": "working-nomads",
+  "status": "no_runbook_yet",
+  "min_links": 3,
+  "verify": "webfetch_listing",
+  "search_urls": [],
+  "fallback_urls": [],
+  "extract_js": "",
+  "discovery": {
+    "max_navigates": 5,
+    "hints": [
+      "Try https://www.workingnomads.com/jobs?category=development",
+      "Region browse exists including an 'Anywhere' section — good for worldwide-only prompts",
+      "Location param: ?location=anywhere or country name",
+      "Extract job listing anchors from the jobs list page"
+    ]
+  },
+  "rules": [
+    "On first successful discovery, set status to active and populate search_urls + extract_js",
+    "Do not save runbook until >= min_links found"
+  ],
+  "notes": [
+    "Curated digital-nomad board; browse by region including Anywhere (2026 research)"
+  ]
+}
