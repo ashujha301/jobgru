@@ -33,7 +33,7 @@ from sheets_write import get_credentials, read_range, sheets_service, write_rang
 
 DEFAULT_TITLE = "Job Applications Tracker (Jobgru Template)"
 DEFAULT_TAB = "Job Applications"
-JOB_DATA_CLEAR_RANGE = "A2:J989"
+JOB_DATA_CLEAR_RANGE = "A2:J"
 RESUME_PLACEHOLDER = "https://example.com/your-resume"
 NAME_PLACEHOLDER = "Your Name"
 

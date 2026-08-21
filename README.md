@@ -7,7 +7,7 @@ Works in **Cursor, Claude Code, Codex**, or any agent — install once, use `/jo
 | Phase | Skill | What it does |
 | --- | --- | --- |
 | **Setup** | `jobgru-setup` | First-time setup, help, health check |
-| **Phase 1 — Jobgru** | `jobgru` | Search boards → verify → append up to 50 jobs/run (LinkedIn max 25) |
+| **Phase 1 — Jobgru** | `jobgru` | Search boards → verify → append requested count (LinkedIn max 25/run; no sheet row cap) |
 | | | Runbooks for 11 boards: LinkedIn, Wellfound, Remote Rocketship, DailyRemote, RemoteOK, We Work Remotely, Remotive, Himalayas, Working Nomads, Indeed, YC Jobs |
 | **Phase 2 — LeadGru** | `leadgru` | LinkedIn leads + notes (automatic, parallel) |
 | **Phase 2b — ATSScore** | `atsscore` | Resume fit scores (Python, parallel) |

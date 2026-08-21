@@ -27,6 +27,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_TOKEN_PATH = SCRIPT_DIR / ".sheets-token.json"
 DEFAULT_CLIENT_SECRETS = SCRIPT_DIR / "oauth-client.json"
 
+from sheet_cells import sanitize_sheet_rows, sanitize_sheet_value  # noqa: E402
 from sheet_config import get_spreadsheet_id, get_tab  # noqa: E402
 
 DEFAULT_SPREADSHEET_ID = get_spreadsheet_id()
@@ -120,8 +121,11 @@ def write_range(
     values: list[list[str]],
     *,
     value_input_option: str = "USER_ENTERED",
+    sanitize: bool = True,
 ) -> dict:
     quoted_tab = f"'{tab}'" if " " in tab else tab
+    if sanitize:
+        values = sanitize_sheet_rows(values)
     body = {"values": values}
     return (
         service.spreadsheets()
@@ -145,7 +149,7 @@ def append_rows(
     value_input_option: str = "USER_ENTERED",
 ) -> dict:
     quoted_tab = f"'{tab}'" if " " in tab else tab
-    body = {"values": rows}
+    body = {"values": sanitize_sheet_rows(rows)}
     return (
         service.spreadsheets()
         .values()
@@ -160,12 +164,34 @@ def append_rows(
     )
 
 
-def get_sheet_id(service, spreadsheet_id: str, tab: str) -> int:
+def get_sheet_properties(service, spreadsheet_id: str, tab: str) -> dict:
     meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
     for sheet in meta.get("sheets", []):
         if sheet["properties"]["title"] == tab:
-            return sheet["properties"]["sheetId"]
+            return sheet["properties"]
     raise SystemExit(f"Tab not found: {tab!r}")
+
+
+def get_sheet_id(service, spreadsheet_id: str, tab: str) -> int:
+    return int(get_sheet_properties(service, spreadsheet_id, tab)["sheetId"])
+
+
+def last_data_row(service, spreadsheet_id: str, tab: str, *, start_row: int = 2) -> int:
+    """Last row with a value in column A (1-based). Header-only sheet returns start_row - 1."""
+    values = read_range(service, spreadsheet_id, tab, f"A{start_row}:A")
+    last = start_row - 1
+    for idx, row in enumerate(values):
+        if row and str(row[0]).strip():
+            last = start_row + idx
+    return last
+
+
+def layout_end_row(service, spreadsheet_id: str, tab: str) -> int:
+    """Format through the sheet's current grid (grows as jobs are appended). No 500 cap."""
+    props = get_sheet_properties(service, spreadsheet_id, tab)
+    grid_rows = int(props.get("gridProperties", {}).get("rowCount") or 0)
+    used = last_data_row(service, spreadsheet_id, tab)
+    return max(grid_rows, used + 1, 2)
 
 
 def parse_row_spec(spec: str) -> list[int]:
@@ -273,9 +299,11 @@ def apply_sheet_layout(
     tab: str,
     *,
     wrap_columns: tuple[int, ...] = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 14, 16),
-    max_row: int = 500,
+    max_row: int | None = None,
 ) -> dict:
     """Wrap text, top-align, and set column widths so cells do not overflow visually."""
+    if max_row is None or max_row <= 0:
+        max_row = layout_end_row(service, spreadsheet_id, tab)
     sheet_id = get_sheet_id(service, spreadsheet_id, tab)
     requests: list[dict] = []
 
@@ -450,11 +478,14 @@ def cmd_first_empty(args: argparse.Namespace) -> int:
 
 def cmd_format_layout(args: argparse.Namespace) -> int:
     service = sheets_service()
+    from sheet_validate import restore_summary_formulas
+
+    restore_summary_formulas(service, args.spreadsheet_id, args.tab)
     result = apply_sheet_layout(
         service,
         args.spreadsheet_id,
         args.tab,
-        max_row=args.max_row,
+        max_row=args.max_row if args.max_row > 0 else None,
     )
     print(json.dumps(result, indent=2))
     print("OK: wrap text, column widths, frozen header, row auto-resize applied")
@@ -479,7 +510,12 @@ def cmd_delete_rows(args: argparse.Namespace) -> int:
     from sheet_validate import restore_summary_formulas
 
     restore_summary_formulas(service, args.spreadsheet_id, args.tab)
-    apply_sheet_layout(service, args.spreadsheet_id, args.tab, max_row=args.max_row)
+    apply_sheet_layout(
+        service,
+        args.spreadsheet_id,
+        args.tab,
+        max_row=args.max_row if args.max_row > 0 else None,
+    )
     next_empty = find_first_empty_row(service, args.spreadsheet_id, args.tab)
     print(
         json.dumps(
@@ -548,8 +584,8 @@ def build_parser() -> argparse.ArgumentParser:
     fmt_p.add_argument(
         "--max-row",
         type=int,
-        default=500,
-        help="Apply wrap formatting through this row (default 500)",
+        default=0,
+        help="Apply wrap through this row (0 = full current sheet grid, no cap)",
     )
     fmt_p.set_defaults(func=cmd_format_layout)
 
@@ -559,8 +595,8 @@ def build_parser() -> argparse.ArgumentParser:
     del_p.add_argument(
         "--max-row",
         type=int,
-        default=500,
-        help="Apply layout formatting through this row after delete",
+        default=0,
+        help="Apply layout through this row after delete (0 = full current sheet grid)",
     )
     del_p.set_defaults(func=cmd_delete_rows)
 

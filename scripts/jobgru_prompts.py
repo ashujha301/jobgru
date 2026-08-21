@@ -46,7 +46,7 @@ def prompts_text(blocks: dict[str, str]) -> str:
         "=" * 34,
         "",
         "One prompt runs the full pipeline: jobs → leads → ATS.",
-        f"Limits: max {RUN_LIMITS['max_jobs_per_run']} jobs/run, LinkedIn max {RUN_LIMITS['max_linkedin_per_run']}/run.",
+        f"Limits: no sheet row cap; this run uses your Count (60+ ok). LinkedIn max {RUN_LIMITS['max_linkedin_per_run']}/run.",
         "",
         f"Boards with runbooks: {', '.join(SUPPORTED_BOARDS)}",
         "(other boards work too — discovered on first use)",

@@ -8,9 +8,10 @@ import json
 import sys
 
 RUN_LIMITS = {
-    "max_jobs_per_run": 50,
+    "max_jobs_per_run": None,
     "max_linkedin_per_run": 25,
     "linkedin_researchers": 1,
+    "sheet_row_cap": None,
 }
 
 FILTER_CATALOG: list[dict] = [
@@ -19,7 +20,7 @@ FILTER_CATALOG: list[dict] = [
         "name": "Target / count",
         "say": "Say how many jobs you want this run.",
         "examples": ["find 3 jobs", "find 10 jobs", "find up to 30 jobs"],
-        "limits": "Max 50 jobs per run (hard cap).",
+        "limits": "No sheet row cap — append as many jobs as you ask for this run. LinkedIn still max 25 jobs per run (rate-limit safety).",
     },
     {
         "id": "sources",
@@ -49,7 +50,7 @@ FILTER_CATALOG: list[dict] = [
             "Indeed",
             "YC Jobs",
         ],
-        "limits": "LinkedIn max 25 jobs per run (rate-limit safety). Other boards share the remaining quota up to 50 total. Runbooks in data/board-runbooks/ — other boards work via discovery mode.",
+        "limits": "LinkedIn max 25 jobs per run (rate-limit safety). Other boards have no count cap. The sheet has no row cap. Runbooks in data/board-runbooks/ — other boards work via discovery mode.",
     },
     {
         "id": "roles",
@@ -278,9 +279,9 @@ def catalog_text() -> str:
         "You do not need every filter; only mention what matters to you.",
         "",
         "Run limits:",
-        f"  • Max {RUN_LIMITS['max_jobs_per_run']} jobs per run (total across all boards)",
-        f"  • Max {RUN_LIMITS['max_linkedin_per_run']} jobs from LinkedIn per run (rate-limit safety)",
-        f"  • One LinkedIn researcher per run",
+        "  • No sheet row cap — keep appending across runs (501, 2000, … all work)",
+        f"  • This run: use the Count you ask for (60 is fine). LinkedIn max {RUN_LIMITS['max_linkedin_per_run']}/run",
+        "  • One LinkedIn researcher per run",
         "",
         "=" * 44,
         "",

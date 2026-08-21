@@ -11,7 +11,7 @@ Google Sheet:
 Google Sheet (read URL from config/sheet.json → sheet_url):
 
 Step 1 — Read via Sheets API (not browser):
-  scripts/sheets_write.py read --range "A2:H500"
+  scripts/sheets_write.py read --range "A2:H"
   scripts/sheets_write.py read --range "Q1:Q7"
 
 Process every row where Status (column D) is "to apply" and Leads (column G) is empty.

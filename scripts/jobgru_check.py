@@ -99,12 +99,18 @@ def check_python(report: Report) -> None:
 
 
 def check_router_skills(report: Report) -> None:
-    """Router skill must be installed for every agent present on this machine."""
+    """Router skill must be installed for every agent present on this machine.
+
+    Repo checkouts use `.cursor/skills/jobgru/SKILL.md` in the project — that counts
+    for Cursor so `jobgru check` is not NOT READY during local development.
+    """
     agents = [
         ("cursor", Path.home() / ".cursor"),
         ("claude", Path.home() / ".claude"),
         ("codex", Path.home() / ".codex"),
     ]
+    repo_skill = PROJECT_ROOT / ".cursor" / "skills" / "jobgru" / "SKILL.md"
+    repo_ok = get_install_mode() == "repo" and repo_skill.is_file()
     installed: list[str] = []
     missing: list[str] = []
     for cli, agent_home in agents:
@@ -112,7 +118,7 @@ def check_router_skills(report: Report) -> None:
         if not present:
             continue
         skill = agent_home / "skills" / "jobgru" / "SKILL.md"
-        if skill.is_file():
+        if skill.is_file() or (repo_ok and cli == "cursor"):
             installed.append(cli)
         else:
             missing.append(cli)

@@ -25,6 +25,11 @@ jobs:
       - name: Python compile
         run: python3 -m py_compile scripts/*.py
 
+      - name: Unit tests
+        run: |
+          python3 -m pip install -q -r scripts/requirements.txt
+          python3 tests/test_sheet_uncap.py
+
       - name: Installer smoke test
         run: |
           chmod +x install.sh bin/jobgru

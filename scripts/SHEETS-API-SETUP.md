@@ -83,7 +83,7 @@ All commands from **project root**:
 | `auth status` | Check saved OAuth token |
 | `test --cleanup` | Write/read/clear smoke test on A22 |
 | `first-empty` | Print first empty row in column A |
-| `read --range "A2:H500"` | Read cells |
+| `read --range "A2:H"` | Read all job rows (open-ended) |
 | `append --file FILE --start-row N` | Write job rows (Jobgru) |
 | `write --range "G5:H5" --json '[["a","b"]]'` | Write Leads + note (LeadGru) |
 | `format-layout` | Wrap text + column widths for F/G/H/O (prevents overflow) |

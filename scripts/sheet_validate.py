@@ -22,23 +22,22 @@ EXPECTED_HEADERS_A_J = [
 ]
 
 SUMMARY_FORMULAS = [
-    "=COUNTA(D2:D989)",
-    '=COUNTIF(D2:D989, "Interview")',
-    '=COUNTIF(D2:D989, "Rejected")',
-    '=COUNTIF(D2:D989, "Selected")',
-    '=COUNTIF(D3:D989, "Assesment")',
-    '=COUNTIF(D4:D989, "Contacted")',
+    "=COUNTA(D2:D)",
+    '=COUNTIF(D2:D, "Interview")',
+    '=COUNTIF(D2:D, "Rejected")',
+    '=COUNTIF(D2:D, "Selected")',
+    '=COUNTIF(D3:D, "Assesment")',
+    '=COUNTIF(D4:D, "Contacted")',
 ]
 
-# Row deletions make Sheets shrink formula ranges (D989 → D984 after 5 deletes).
-# Validate the formula shape and tolerate any end row.
+# Accept unbounded D2:D and legacy D2:D989 (deletes used to shrink the end row).
 SUMMARY_FORMULA_PATTERNS = [
-    re.compile(r"^=COUNTA\(D2:D\d+\)$"),
-    re.compile(r'^=COUNTIF\(D2:D\d+,\s*"Interview"\)$'),
-    re.compile(r'^=COUNTIF\(D2:D\d+,\s*"Rejected"\)$'),
-    re.compile(r'^=COUNTIF\(D2:D\d+,\s*"Selected"\)$'),
-    re.compile(r'^=COUNTIF\(D3:D\d+,\s*"Assesment"\)$'),
-    re.compile(r'^=COUNTIF\(D4:D\d+,\s*"Contacted"\)$'),
+    re.compile(r"^=COUNTA\(D2:D\d*\)$"),
+    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Interview"\)$'),
+    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Rejected"\)$'),
+    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Selected"\)$'),
+    re.compile(r'^=COUNTIF\(D3:D\d*,\s*"Assesment"\)$'),
+    re.compile(r'^=COUNTIF\(D4:D\d*,\s*"Contacted"\)$'),
 ]
 
 STATUS_DROPDOWN_VALUES = [
@@ -91,7 +90,7 @@ def validate_summary_formulas(service, spreadsheet_id: str, tab: str) -> tuple[b
     for i, (pattern, actual) in enumerate(zip(SUMMARY_FORMULA_PATTERNS, got, strict=False)):
         if not pattern.match(str(actual)):
             issues.append(
-                f"M{i + 2}: expected {SUMMARY_FORMULAS[i]!r} (any end row), got {actual!r}"
+                f"M{i + 2}: expected {SUMMARY_FORMULAS[i]!r} (or legacy D2:D989), got {actual!r}"
             )
     return not issues, issues
 
@@ -106,6 +105,7 @@ def restore_summary_formulas(service, spreadsheet_id: str, tab: str) -> None:
         tab,
         "M2:M7",
         [[f] for f in SUMMARY_FORMULAS],
+        sanitize=False,
     )
 
 

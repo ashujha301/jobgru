@@ -188,12 +188,12 @@ Tab must stay **`Job Applications`**. Spreadsheet title can be anything.
 
 | Row | Label | Formula |
 | --- | --- | --- |
-| M2 | Total Applied | `=COUNTA(D2:D989)` |
-| M3 | Interviews | `=COUNTIF(D2:D989, "Interview")` |
-| M4 | Rejections | `=COUNTIF(D2:D989, "Rejected")` |
-| M5 | Total Selected | `=COUNTIF(D2:D989, "Selected")` |
-| M6 | Total Assesments | `=COUNTIF(D3:D989, "Assesment")` |
-| M7 | Total Contacted | `=COUNTIF(D4:D989, "Contacted")` |
+| M2 | Total Applied | `=COUNTA(D2:D)` |
+| M3 | Interviews | `=COUNTIF(D2:D, "Interview")` |
+| M4 | Rejections | `=COUNTIF(D2:D, "Rejected")` |
+| M5 | Total Selected | `=COUNTIF(D2:D, "Selected")` |
+| M6 | Total Assesments | `=COUNTIF(D3:D, "Assesment")` |
+| M7 | Total Contacted | `=COUNTIF(D4:D, "Contacted")` |
 
 **Status dropdown (column D):** Applied, Rejected, Interview, Selected, Assesment, Contacted, To Apply.
 
@@ -289,7 +289,7 @@ Details format (column F): `Pay: …, Exp: …, … | Skills: Python, FastAPI, �
 | `scripts/jobgru_check.py` | Full setup health check |
 | `scripts/sheet_config.py set --url …` | Write config |
 | `scripts/sheets_write.py test --cleanup` | Auth smoke test |
-| `scripts/sheets_write.py read --range "A2:H500"` | Read for dedupe |
+| `scripts/sheets_write.py read --range "A2:H"` | Read for dedupe |
 | `scripts/ats_score.py score --all` | ATS scoring |
 | `scripts/init_template_sheet.py` | Regenerate shareable template (maintainers) |
 

@@ -43,7 +43,7 @@ Rules in pipeline mode:
 
 **When:** User explicitly asks for LeadGru only (e.g. "run LeadGru", "fill leads for empty rows") **without** a Jobgru run in the same session.
 
-**Scope:** All eligible rows in the sheet (`A2:H500`) where Status is `to apply` and Leads (G) is empty.
+**Scope:** All eligible rows in the sheet (`A2:H`, open-ended) where Status is `to apply` and Leads (G) is empty.
 
 Use [prompts/leadgru-run.md](../../prompts/leadgru-run.md) for standalone backfill prompts.
 
@@ -111,7 +111,7 @@ If Add note Message (column H) is filled, still fill Leads when empty; do not ov
 Process every matching row in the batch.
 
 - **Pipeline mode:** rows `start_row`–`end_row` from Jobgru run only (typically 5–10 companies)
-- **Standalone mode:** all eligible rows in `A2:H500`
+- **Standalone mode:** all eligible rows in `A2:H` (open-ended — includes 501+)
 
 ## Coordinator workflow
 
@@ -135,7 +135,7 @@ Process every matching row in the batch.
 
 1. **Read rows + templates** (Sheets API — do not open sheet in browser):
    ```bash
-   .venv/bin/python scripts/sheets_write.py read --range "A2:H500"
+   .venv/bin/python scripts/sheets_write.py read --range "A2:H"
    .venv/bin/python scripts/sheets_write.py read --range "Q1:Q7"
    ```
 2. Filter eligible rows (Status `to apply`, Leads empty).
@@ -455,7 +455,7 @@ Column widths: F=240px, G=280px, H=300px, O (templates)=300px. Re-run anytime.
 
 | Command | Purpose |
 | --- | --- |
-| `read --range "A2:H500"` | Find eligible rows |
+| `read --range "A2:H"` | Find eligible rows (all job rows, no 500 cap) |
 | `read --range "Q1:Q7"` | Load Add note templates |
 | `write --range "G{R}:H{R}" --json '[["...", "..."]]'` | Write leads + note |
 | `read --range "A{R}:H{R}"` | Verify one row |

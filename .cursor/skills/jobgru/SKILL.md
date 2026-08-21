@@ -1,11 +1,11 @@
 ---
 name: jobgru
-description: Jobgru pipeline Phase 1 — coordinate parallel job-board researchers to find and verify up to 50 unique jobs per run (LinkedIn max 25/run), deduplicate against the Job Applications Google Sheet, append rows via scripts/sheets_write.py, then automatically run LeadGru (Phase 2) and ATSScore (Phase 2b) in parallel for those new rows. Use when the user asks for Jobgru, job search, filtered openings, or to fill the tracker from LinkedIn, Wellfound, Indeed, YC Jobs, or other boards. One user prompt runs all phases; do not stop after sheet append.
+description: Jobgru pipeline Phase 1 — coordinate parallel job-board researchers to find and verify the user-requested count of unique jobs (LinkedIn max 25/run; no sheet row cap), deduplicate against the Job Applications Google Sheet, append rows via scripts/sheets_write.py, then automatically run LeadGru (Phase 2) and ATSScore (Phase 2b) in parallel for those new rows. Use when the user asks for Jobgru, job search, filtered openings, or to fill the tracker from LinkedIn, Wellfound, Indeed, YC Jobs, or other boards. One user prompt runs all phases; do not stop after sheet append.
 ---
 
 # Jobgru (Pipeline Phase 1)
 
-Coordinate parallel read-only researchers across job boards, verify each listing, deduplicate, and append up to **50 unique jobs per run** to the Job Applications tracker (LinkedIn capped at **25/run** for rate-limit safety). **Only the coordinator writes to the sheet** — always via `scripts/sheets_write.py` (Google Sheets API). **Never use agent browser tools to type into sheet cells** (Enter/Tab does not commit edits). Sheet writes = Sheets API only.
+Coordinate parallel read-only researchers across job boards, verify each listing, deduplicate, and append the **user-requested count** of unique jobs to the Job Applications tracker (LinkedIn capped at **25/run** for rate-limit safety; **no sheet row cap**). **Only the coordinator writes to the sheet** — always via `scripts/sheets_write.py` (Google Sheets API). **Never use agent browser tools to type into sheet cells** (Enter/Tab does not commit edits). Sheet writes = Sheets API only.
 
 ## Browser tools (job boards + LinkedIn)
 
@@ -121,9 +121,9 @@ Older rows (before Aug 2026) may still have apply URLs inside column F; do not r
 
 ## Per-run limits
 
-- Target: user-requested count, **max 50 verified unique jobs per run** (hard cap)
+- Target: user-requested count this run (60, 100, …). **No sheet row cap** — rows 501+ are included in dedupe, ATS, LeadGru, and layout.
 - **LinkedIn Jobs: max 25 accepted jobs per run** — protects account from rate limits; stop LinkedIn at 25 even if user asks for more
-- Other boards share the remaining quota up to the 50 total (single board, multiple boards in parallel, or mix & match — user chooses in prompt)
+- Other boards fill the rest of the requested count (single board, multiple boards in parallel, or mix & match)
 - Stop early if sources are exhausted or blocked (report partial status)
 - **One** LinkedIn researcher only
 - Do not loosen filters to hit the target
@@ -132,7 +132,7 @@ Older rows (before Aug 2026) may still have apply URLs inside column F; do not r
 
 1. **Read existing sheet rows** for dedupe (Sheets API — do not rely on browser):
    ```bash
-   .venv/bin/python scripts/sheets_write.py read --range "A2:H500"
+   .venv/bin/python scripts/sheets_write.py read --range "A2:H"
    ```
    Fallback read: Drive MCP `read_file_content` with `fileId` = `spreadsheet_id` from `config/sheet.json`
 2. Build duplicate index: normalized company + similar role, plus canonical apply URLs from **column C** (fallback: parse `Apply:` from column F on older rows).
@@ -539,7 +539,7 @@ Run from **project root**:
 | Command | Purpose |
 | --- | --- |
 | `.venv/bin/python scripts/sheets_write.py first-empty` | First empty row in column A |
-| `.venv/bin/python scripts/sheets_write.py read --range "A2:H500"` | Read for dedupe |
+| `.venv/bin/python scripts/sheets_write.py read --range "A2:H"` | Read for dedupe (open-ended — all job rows) |
 | `.venv/bin/python scripts/sheets_write.py append --file FILE --start-row N` | Write N rows at row N |
 | `.venv/bin/python scripts/sheets_write.py read --range "A{N}:H{M}"` | Verify after write |
 | `.venv/bin/python scripts/sheets_write.py test --cleanup` | Auth smoke test |
@@ -584,7 +584,7 @@ Before **pipeline** completion (Phase 1 + Phase 2):
 
 **Phase 1 (Jobgru):**
 
-1. Up to 50 rows appended (or fewer with source-exhaustion report; LinkedIn capped at 25)
+1. Requested count appended (or fewer with source-exhaustion report; LinkedIn capped at 25; sheet has no row cap)
 2. Every row has Company, Position, apply URL in column C, `to apply`, date, Details in F
 3. No duplicate company+similar-role against pre-run snapshot
 4. Existing rows and columns K+ unchanged

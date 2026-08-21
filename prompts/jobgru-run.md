@@ -8,7 +8,7 @@ Terminal: `jobgru prompts` · Filter catalog: `jobgru filter`
 
 GitHub: https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md
 
-Limits: **50 jobs max per run**, **25 max from LinkedIn**.
+Limits: **no sheet row cap** (501+ jobs still get dedupe/ATS/leads). **This run uses your Count** (60 is fine). **LinkedIn max 25 per run**.
 
 ---
 

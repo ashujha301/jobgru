@@ -203,7 +203,7 @@ Only write **I** and **J** for eligible rows:
 Verify after batch:
 
 ```bash
-.venv/bin/python scripts/sheets_write.py read --range "I2:J500"
+.venv/bin/python scripts/sheets_write.py read --range "I2:J"
 ```
 
 ## Never do

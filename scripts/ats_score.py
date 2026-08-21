@@ -316,7 +316,7 @@ def pad_row(row: list[str], length: int = 10) -> list[str]:
 
 
 def read_job_rows(service, spreadsheet_id: str, tab: str) -> list[JobRow]:
-    values = read_range(service, spreadsheet_id, tab, "A2:J500")
+    values = read_range(service, spreadsheet_id, tab, "A2:J")
     jobs: list[JobRow] = []
     for idx, raw in enumerate(values):
         row = pad_row(list(raw))
