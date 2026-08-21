@@ -8,7 +8,7 @@ Terminal: `jobgru prompts` · Filter catalog: `jobgru filter`
 
 GitHub: https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md
 
-Limits: **no sheet row cap** (501+ jobs still get dedupe/ATS/leads). **This run uses your Count** (60 is fine). **LinkedIn max 25 per run**.
+Limits: **no sheet row cap** (501+ jobs still get dedupe/ATS/leads). **This run uses your Count**. **LinkedIn has no job-count cap** (pacing + LeadGru 5-people cap).
 
 ---
 
@@ -18,7 +18,7 @@ Name any of these on the `Boards:` line — Jobgru has a navigation runbook for 
 
 | Board | Focus |
 | --- | --- |
-| **LinkedIn** | All roles, all locations (max 25/run) |
+| **LinkedIn** | All roles, all locations (no per-run job cap; 40s pacing) |
 | **Wellfound** | Startups |
 | **Remote Rocketship** | Remote — aggregator, 190k+ jobs, many not on LinkedIn |
 | **DailyRemote** | Remote — fresh listings, updated daily |

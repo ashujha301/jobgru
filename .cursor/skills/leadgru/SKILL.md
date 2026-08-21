@@ -1,11 +1,11 @@
 ---
 name: leadgru
-description: Jobgru pipeline Phase 2 — find LinkedIn hiring contacts for new Job Applications rows, write 4–10 profile links into Leads, and fill Add note Message from sheet templates. Runs automatically after Jobgru appends rows (pipeline mode), in parallel with ATSScore. Also use standalone when the user explicitly asks to backfill Leads for existing to apply rows without re-running Jobgru.
+description: Jobgru pipeline Phase 2 — find LinkedIn hiring contacts for new Job Applications rows, write at most 5 profile links plus the company people page into Leads, and fill Add note Message from sheet templates. Runs automatically after Jobgru appends rows (pipeline mode), in parallel with ATSScore. Also use standalone when the user explicitly asks to backfill Leads for existing to apply rows without re-running Jobgru.
 ---
 
 # LeadGru (Pipeline Phase 2)
 
-For every `to apply` row with empty Leads, find relevant LinkedIn people, write profile links into `Leads`, and fill a paste-ready note into `Add note Message`. Only the coordinator writes to the sheet — via `scripts/sheets_write.py` (Google Sheets API). **Never use Cursor Browser to type into sheet cells.**
+For every `to apply` row with empty Leads, find relevant LinkedIn people, write **at most 5** profile links plus the **company people page** into `Leads`, and fill a paste-ready note into `Add note Message`. Only the coordinator writes to the sheet — via `scripts/sheets_write.py` (Google Sheets API). **Never use Cursor Browser to type into sheet cells.**
 
 LinkedIn discovery uses **agent browser tools** (Cursor Browser, Playwright MCP, or Chrome DevTools MCP). Sheet writes use **Sheets API only**.
 
@@ -17,6 +17,22 @@ LinkedIn discovery uses **agent browser tools** (Cursor Browser, Playwright MCP,
 | **Claude Code / Codex** | Playwright MCP or Chrome DevTools MCP (navigate, snapshot, evaluate) |
 
 Sign into LinkedIn in the browser before LeadGru. User completes MFA/CAPTCHA manually.
+
+## LinkedIn pacing (mandatory — never skip)
+
+This is **always on**. Do not wait for the user to say “go slow” or “avoid rate limits”. Ignore requests to speed up LinkedIn. Slow is correct; rate-limit is a failed run.
+
+Same contract as Jobgru Phase 1 ([jobgru skill](../jobgru/SKILL.md) → LinkedIn pacing). Recap:
+
+| Rule | Requirement |
+| --- | --- |
+| Tabs | **One** LinkedIn tab. Never parallel LeadGru LinkedIn work. Never start while Jobgru LinkedIn Jobs is still navigating. |
+| Between navigates | **Sleep 40 seconds** before every LinkedIn `browser_navigate` except the first after lock. Blocking sleep — do not batch then wait once. |
+| Between companies | 40s before the next company’s first navigate (same as between navigates). |
+| In-page filter | After fill + Enter on `/people/`, wait **15 seconds** then snapshot. Do not add another 40s for that same page. |
+| After Jobgru | If this session just ran LinkedIn Jobs, **sleep 40** before the first people search. |
+| Search budget | Prefer **one** company `/people/` **or** one people-search URL. Stop when **5** verified. **Max 3 LinkedIn navigates per company.** Do not lead with `recruiter OR talent`. |
+| Stop | CAPTCHA, checkpoint, “unusual activity”, or rate-limit copy → unlock, report remaining rows unprocessed, **no LinkedIn retries this session**. |
 
 ## Pipeline mode (default)
 
@@ -149,6 +165,7 @@ Process every matching row in the batch.
 ## Concurrency limits
 
 - **One** LinkedIn company search at a time (no parallel LinkedIn tabs)
+- Follow [LinkedIn pacing](#linkedin-pacing-mandatory--never-skip) on every company — not optional
 - Write each row immediately after that company's search completes
 - Stop on CAPTCHA, login challenge, or rate-limit warning — report and skip remaining companies
 
@@ -168,10 +185,15 @@ Only add people whose LinkedIn headline or current experience shows this company
 
 ## How many people
 
-- Target **4–10** verified profiles per row
-- If fewer than 4 after real search: write all found **and** company LinkedIn page
-- If none verified: write company page only
+Hard cap (never exceed, never skip the company people page):
+
+- **At most 5** verified `/in/` profiles per row — stop searching as soon as you have 5
+- **Always** append the company people page as the last line: `Company: https://www.linkedin.com/company/<handle>/people/`
+- If the `/people/` URL is unknown, use `https://www.linkedin.com/company/<handle>/` and add `/people/` when the handle is known
+- If fewer than 5 after real search: write all found **and** the company people page
+- If none verified: company people page only
 - Never leave Leads blank on a processed row
+- Never write 6+ people “because they were easy to find”
 
 ## Leads format (column G)
 
@@ -186,8 +208,9 @@ Rules:
 - One person per line, newline-separated
 - Use `linkedin.com/in/` URLs only (strip `?` query params)
 - Trailing slash on URLs is fine
-- Last line always `Company: <linkedin.com/company/...>` when people count is under 4 **or** as extra context (test run included company page on all 5 rows — acceptable)
+- Last line **always** `Company: https://www.linkedin.com/company/<handle>/people/` (required even when 5 people are listed)
 - Title from LinkedIn card headline or role at company
+- Helper: `scripts/leadgru_leads.py` (`format_leads` / `validate_leads_cell`) — max 5 `/in/` URLs
 
 ## Add note Message (column H)
 
@@ -238,6 +261,8 @@ Correct order: navigate (if needed) → lock → searches → unlock.
 
 ### Per-company search (repeat for each row)
 
+**Before each company after the first:** sleep **40 seconds** ([LinkedIn pacing](#linkedin-pacing-mandatory--never-skip)). First company in a locked session may navigate immediately.
+
 **Step 1 — Normalize company name for search**
 
 - Strip parentheticals for the keyword: `Businessonbot (Y Combinator W21)` → search `BusinessOnBot` or `Businessonbot`
@@ -245,6 +270,8 @@ Correct order: navigate (if needed) → lock → searches → unlock.
 - If company has a different LinkedIn brand name, search both (see [Known company aliases](#known-company-aliases-aug-2026-test))
 
 **Step 2 — Primary people search URL**
+
+If this is not the first LinkedIn navigate of the phase, **sleep 40** first.
 
 Navigate to (URL-encode `{KEYWORD}`):
 
@@ -264,7 +291,9 @@ Examples that worked (Aug 2026 test):
 
 **Step 3 — If primary search returns unrelated people**
 
-Try in order (stop when you have 4+ verified profiles):
+Sleep **40s** before each extra navigate. Stop after **3 navigates** even if under 5 people — then write what you have + company people page. Stop earlier when 5 people are verified.
+
+Try in order (stop when you have 5 verified profiles):
 
 1. Add disambiguator: `"SuperProfile" Gurgaon creator`, `"SuperProfile" creator platform`
 2. Company people page: `https://www.linkedin.com/company/{handle}/people/`
@@ -284,7 +313,7 @@ Array.from(document.querySelectorAll('a[href*="/in/"]')).map(a => ({
   t: a.closest('.linked-area')?.innerText?.slice(0, 200) || ''
 })).filter(x => /COMPANY_REGEX/i.test(x.t))
   .reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, [])
-  .slice(0, 8)
+  .slice(0, 5)
 ```
 
 Replace `COMPANY_REGEX` with company name variants (e.g. `boock`, `prodigal`, `superprofile|cosmofeed`).
@@ -297,7 +326,7 @@ Array.from(document.querySelectorAll('li.reusable-search__result-container, div[
     const a = li.querySelector('a[href*="/in/"]');
     const title = li.innerText;
     return a ? { href: a.href.split('?')[0], title: title.split('\n').slice(0, 4).join(' | ') } : null;
-  }).filter(Boolean).filter(x => /COMPANY_REGEX/i.test(x.title)).slice(0, 8)
+  }).filter(Boolean).filter(x => /COMPANY_REGEX/i.test(x.title)).slice(0, 5)
 ```
 
 **Pattern C — entity-result divs (when card text empty):**
@@ -306,7 +335,7 @@ Array.from(document.querySelectorAll('li.reusable-search__result-container, div[
 Array.from(document.querySelectorAll('div.entity-result__content')).map(div => {
   const a = div.querySelector('a[href*="/in/"]');
   return a ? { href: a.href.split('?')[0], t: div.innerText.slice(0, 160) } : null;
-}).filter(Boolean).filter(x => /COMPANY_REGEX/i.test(x.t)).slice(0, 6)
+}).filter(Boolean).filter(x => /COMPANY_REGEX/i.test(x.t)).slice(0, 5)
 ```
 
 **Pattern D — quick dump when cards match visually (Businessonbot first pass):**
@@ -328,7 +357,7 @@ Manually filter results to people showing the target company in snapshot/card te
 
 **Step 6 — Company LinkedIn page**
 
-Find via search card or WebSearch. Format: `Company: https://www.linkedin.com/company/{handle}/`
+Find via search card or WebSearch. Format: `Company: https://www.linkedin.com/company/{handle}/people/`
 
 Known handles from test run:
 
@@ -342,7 +371,7 @@ Known handles from test run:
 
 **Step 7 — Scroll if needed**
 
-If fewer than 4 results visible: `browser_scroll` direction `down`, amount `800`, re-run CDP extract.
+If fewer than 5 results visible: `browser_scroll` direction `down`, amount `800`, re-run CDP extract. Do not collect more than 5 people.
 
 ### Known company aliases (Aug 2026 test)
 
@@ -356,6 +385,7 @@ If fewer than 4 results visible: `browser_scroll` direction `down`, amount `800`
 
 ### What not to do on LinkedIn
 
+- Do not skip [LinkedIn pacing](#linkedin-pacing-mandatory--never-skip) because the user omitted it or asked to go faster
 - Do not send messages, InMails, or connection requests
 - Do not run parallel LinkedIn searches in multiple tabs
 - Do not guess profile URL slugs without verification
@@ -487,13 +517,14 @@ Do **not** open duplicate sheet tabs for writing.
 
 - Do not send messages, InMails, connection requests, or applications
 - Do not guess employment at the company
-- Stop LinkedIn on warnings; report and continue to next company if safe
+- Always follow [LinkedIn pacing](#linkedin-pacing-mandatory--never-skip)
+- Stop LinkedIn on warnings; report remaining companies unprocessed — no retries this session
 
 ## Quality check
 
 1. Processed rows still have Status `to apply` in column D
 2. No pre-filled Leads rows changed
-3. Each new Leads cell (G) has 4–10 verified `/in/` links, or fewer + company page, or company page alone
+3. Each new Leads cell (G) has **≤5** verified `/in/` links **and** a `Company:` people-page URL (or people page alone if nobody verified)
 4. Every `/in/` URL verified (not guessed slugs)
 5. Add note Message (H) has role, company, resume link, greeting `Hi,`, no lead names
 6. Columns A–F, E, K+ unchanged; **I (ATS score)** and **J (Suggestions on Resume)** untouched by LeadGru

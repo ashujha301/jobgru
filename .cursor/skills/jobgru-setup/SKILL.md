@@ -76,7 +76,7 @@ Explain to the user:
 
 ## Filter mode
 
-Show every filter type the user can put in a job-search prompt (plain English + e.g. examples). Mention: no sheet row cap; this run uses requested Count; LinkedIn max 25/run.
+Show every filter type the user can put in a job-search prompt (plain English + e.g. examples). Mention: no sheet row cap; this run uses requested Count; LinkedIn has no job-count cap; LeadGru max 5 people + company people page.
 
 ```bash
 .venv/bin/python scripts/jobgru_filters.py

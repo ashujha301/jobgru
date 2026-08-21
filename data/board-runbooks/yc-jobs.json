@@ -1,21 +1,31 @@
 {
   "board": "YC Jobs / Work at a Startup",
   "board_id": "yc-jobs",
-  "status": "no_runbook_yet",
+  "status": "active",
+  "discovered_at": "2026-08-21",
+  "last_ok": "2026-08-21",
   "min_links": 3,
   "verify": "webfetch_listing",
-  "search_urls": [],
-  "fallback_urls": [],
-  "extract_js": "",
-  "discovery": {
-    "max_navigates": 5,
-    "hints": [
-      "Try https://www.workatastartup.com/jobs or YC jobs board with role/location filters",
-      "Extract job listing URLs from search results page"
-    ]
-  },
+  "search_urls": [
+    "https://www.ycombinator.com/jobs",
+    "https://www.ycombinator.com/jobs/role/software-engineer",
+    "https://www.ycombinator.com/jobs/location/india",
+    "https://www.ycombinator.com/jobs/role/software-engineer/remote"
+  ],
+  "fallback_urls": [
+    "https://www.workatastartup.com/jobs"
+  ],
+  "extract_js": "Array.from(document.querySelectorAll('a[href*=\"/companies/\"][href*=\"/jobs/\"]')).map(a => ({ href: new URL(a.getAttribute('href'), location.origin).href, title: (a.textContent || '').trim() })).filter(x => x.title && x.href).reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, []).slice(0, 30)",
+  "link_pattern": "/companies/{company}/jobs/{id}",
   "rules": [
-    "On first successful discovery, set status to active and populate search_urls + extract_js",
-    "Do not save runbook until >= min_links found"
+    "Use the public ycombinator.com job pages first; they expose stable company job links without login",
+    "Filter by role, location, experience, and employment type only after opening the full listing",
+    "Many individual listings omit posting dates; exclude them when the prompt has a posting-age gate and no current card or listing provides verifiable age",
+    "Use workatastartup.com only as fallback because its search page may return no fetchable body"
+  ],
+  "notes": [
+    "Discovered and independently verified 2026-08-21",
+    "Public routes verified: base jobs, software engineer, India, and remote software engineer",
+    "Discovery exposed at least 15 stable listing links"
   ]
 }

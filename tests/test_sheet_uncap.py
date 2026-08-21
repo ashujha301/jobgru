@@ -78,7 +78,8 @@ class FilterLimitsTests(unittest.TestCase):
 
         self.assertIsNone(RUN_LIMITS["max_jobs_per_run"])
         self.assertIsNone(RUN_LIMITS["sheet_row_cap"])
-        self.assertEqual(RUN_LIMITS["max_linkedin_per_run"], 25)
+        self.assertIsNone(RUN_LIMITS["max_linkedin_per_run"])
+        self.assertEqual(RUN_LIMITS["leadgru_max_people_per_company"], 5)
 
 
 class LastDataRowTests(unittest.TestCase):

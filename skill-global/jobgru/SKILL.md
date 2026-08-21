@@ -41,6 +41,8 @@ The Playwright profile lives at `~/.jobgru/browser-profile` — LinkedIn login p
 
 User completes MFA/CAPTCHA manually in the visible browser window.
 
+**LinkedIn pacing is always on** (Jobgru LinkedIn Jobs + LeadGru). Read it in `$JOBGRU_HOME/.cursor/skills/jobgru/SKILL.md` and `leadgru/SKILL.md`. Default: **40s sleep before every LinkedIn navigate** except the first after lock; one LinkedIn tab; stop on CAPTCHA/rate-limit with no retries. LinkedIn has **no job-count cap**; LeadGru writes **at most 5 people + company people page**. Do not skip pacing because the user omitted “go slow”.
+
 ## Quick commands
 
 ```bash

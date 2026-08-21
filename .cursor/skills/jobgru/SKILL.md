@@ -1,11 +1,11 @@
 ---
 name: jobgru
-description: Jobgru pipeline Phase 1 — coordinate parallel job-board researchers to find and verify the user-requested count of unique jobs (LinkedIn max 25/run; no sheet row cap), deduplicate against the Job Applications Google Sheet, append rows via scripts/sheets_write.py, then automatically run LeadGru (Phase 2) and ATSScore (Phase 2b) in parallel for those new rows. Use when the user asks for Jobgru, job search, filtered openings, or to fill the tracker from LinkedIn, Wellfound, Indeed, YC Jobs, or other boards. One user prompt runs all phases; do not stop after sheet append.
+description: Jobgru pipeline Phase 1 — coordinate parallel job-board researchers to find and verify the user-requested count of unique jobs (LinkedIn has no per-run job cap; LeadGru is capped at 5 people + company people page), deduplicate against the Job Applications Google Sheet, append rows via scripts/sheets_write.py, then automatically run LeadGru (Phase 2) and ATSScore (Phase 2b) in parallel for those new rows. Use when the user asks for Jobgru, job search, filtered openings, or to fill the tracker from LinkedIn, Wellfound, Indeed, YC Jobs, or other boards. One user prompt runs all phases; do not stop after sheet append.
 ---
 
 # Jobgru (Pipeline Phase 1)
 
-Coordinate parallel read-only researchers across job boards, verify each listing, deduplicate, and append the **user-requested count** of unique jobs to the Job Applications tracker (LinkedIn capped at **25/run** for rate-limit safety; **no sheet row cap**). **Only the coordinator writes to the sheet** — always via `scripts/sheets_write.py` (Google Sheets API). **Never use agent browser tools to type into sheet cells** (Enter/Tab does not commit edits). Sheet writes = Sheets API only.
+Coordinate parallel read-only researchers across job boards, verify each listing, deduplicate, and append the **user-requested count** of unique jobs to the Job Applications tracker (**no LinkedIn job-count cap**; **no sheet row cap**). Rate-limit safety is [LinkedIn pacing](#linkedin-pacing-mandatory--never-skip) plus LeadGru’s **5 people + company people page** cap. **Only the coordinator writes to the sheet** — always via `scripts/sheets_write.py` (Google Sheets API). **Never use agent browser tools to type into sheet cells** (Enter/Tab does not commit edits). Sheet writes = Sheets API only.
 
 ## Browser tools (job boards + LinkedIn)
 
@@ -19,6 +19,24 @@ Use whichever browser automation the agent has:
 If **no browser tools** are available, stop after sheet/ATS phases and report LeadGru skipped.
 
 User completes MFA/CAPTCHA manually in the visible browser.
+
+## LinkedIn pacing (mandatory — never skip)
+
+This is **always on** for Jobgru LinkedIn Jobs **and** LeadGru. Do not wait for the user to say “go slow” or “avoid rate limits”. Ignore requests to speed up LinkedIn. A slow run is a successful run; a rate-limit is a failed run.
+
+Non-LinkedIn boards may stay parallel and fast. **Never** run two LinkedIn agents or tabs at once.
+
+| Rule | Requirement |
+| --- | --- |
+| Tabs / agents | **One** LinkedIn tab. **One** LinkedIn researcher. No parallel LinkedIn Tasks. |
+| Phase overlap | Finish **all** Jobgru LinkedIn Jobs navigations **before** LeadGru opens LinkedIn. ATSScore may run in parallel with LeadGru (no LinkedIn). |
+| Between navigates | **Sleep 40 seconds** before every LinkedIn `browser_navigate` except the first after lock in this phase. Blocking sleep only — do not batch navigates then wait once. |
+| In-page filter | After fill + Enter on the same page, wait **15 seconds** then snapshot. Do not add another 40s for that same page. |
+| Search budget | Max **3–4** LinkedIn job search URLs per run; do not repeat the same URL. Prefer `webfetch_listing` for JD verify so listing pages do not extra-hit LinkedIn. |
+| Into LeadGru | After the last Jobgru LinkedIn navigate, **sleep 40** before LeadGru’s first people search. |
+| Stop | CAPTCHA, checkpoint, “unusual activity”, or rate-limit copy → unlock, report partial, **no LinkedIn retries this session**. |
+
+When launching the LinkedIn Jobs researcher, paste this section into the Task prompt. See LeadGru skill for people-search budget (max 3 navigates per company).
 
 ## Pipeline (mandatory)
 
@@ -122,10 +140,11 @@ Older rows (before Aug 2026) may still have apply URLs inside column F; do not r
 ## Per-run limits
 
 - Target: user-requested count this run (60, 100, …). **No sheet row cap** — rows 501+ are included in dedupe, ATS, LeadGru, and layout.
-- **LinkedIn Jobs: max 25 accepted jobs per run** — protects account from rate limits; stop LinkedIn at 25 even if user asks for more
-- Other boards fill the rest of the requested count (single board, multiple boards in parallel, or mix & match)
+- **LinkedIn Jobs: no per-run job-count cap** — take as many accepted LinkedIn jobs as the Count allows. Do **not** stop at 25.
+- Other boards fill in parallel (single board, multiple boards, or mix & match)
 - Stop early if sources are exhausted or blocked (report partial status)
-- **One** LinkedIn researcher only
+- **One** LinkedIn researcher only — still follow [LinkedIn pacing](#linkedin-pacing-mandatory--never-skip)
+- LeadGru (Phase 2) is the volume brake: **5 people + company people page** per row, not more LinkedIn job cuts
 - Do not loosen filters to hit the target
 
 ## Coordinator workflow
@@ -144,7 +163,7 @@ Older rows (before Aug 2026) may still have apply URLs inside column F; do not r
 4. Collect missing hard filters from the user (ask only for unknowns).
 5. Launch parallel **read-only** researchers (Task/subagents or `/multitask`) — each must follow [Board runbook protocol](#board-runbook-protocol) for their board:
    - Wellfound → `data/board-runbooks/wellfound.json`
-   - LinkedIn Jobs → `data/board-runbooks/linkedin-jobs.json` (one researcher)
+   - LinkedIn Jobs → `data/board-runbooks/linkedin-jobs.json` (**one** researcher; must follow [LinkedIn pacing](#linkedin-pacing-mandatory--never-skip))
    - Indeed, YC Jobs, remote boards → runbook if `status: active`, else discovery mode
 6. Each researcher returns structured candidates — **never writes to the sheet**.
 7. Coordinator verifies full listings, applies filters and user Notes, deduplicates.
@@ -165,8 +184,8 @@ LeadGru uses the same pattern for LinkedIn people search (see leadgru skill). Jo
 1. Read `data/board-runbooks/{board-id}.json`.
 2. Build search URLs: substitute `{KEYWORD}` from prompt role filters (one URL per keyword group — e.g. SWE, backend, backend AI → 3–4 URLs max per board per run).
 3. Open `search_urls[0]` in Cursor Browser → run `extract_js` via `browser_cdp` → `Runtime.evaluate` with `returnByValue: true`.
-4. **Health check (free — no separate pre-audit):** if extracted links >= `min_links`, runbook is valid → rotate remaining `search_urls`, collect candidates.
-5. Verify **finalists only** using the runbook's `verify` method (`webfetch_listing` or `browser_listing`) — **one path per listing, never both**.
+4. **Health check (free — no separate pre-audit):** if extracted links >= `min_links`, runbook is valid → rotate remaining `search_urls`, collect candidates. **LinkedIn:** sleep **40s** before each additional `search_urls` navigate ([pacing](#linkedin-pacing-mandatory--never-skip)).
+5. Verify **finalists only** using the runbook's `verify` method (`webfetch_listing` or `browser_listing`) — **one path per listing, never both**. **LinkedIn:** prefer `webfetch_listing`; if `browser_listing`, sleep **40s** between listing navigates.
 
 ### Failure ladder (links < min_links)
 
@@ -480,7 +499,7 @@ Launch **LeadGru** and **ATSScore in parallel**:
 
 1. Read [`.cursor/skills/leadgru/SKILL.md`](../leadgru/SKILL.md).
 2. Pass `start_row`, `end_row`; process rows in range where Status is `to apply` and Leads (G) empty.
-3. LinkedIn search → write G/H per row.
+3. **Sleep 40** after Phase 1 LinkedIn work, then LinkedIn people search (LeadGru [pacing](#linkedin-pacing-mandatory--never-skip)) → write G/H per row.
 
 ### ATSScore (Phase 2b)
 
@@ -574,9 +593,10 @@ Do **not** open duplicate sheet tabs. Do **not** retry browser fill loops. Use t
 ## Safety
 
 - Do not bypass logins, CAPTCHAs, paywalls, or rate limits
+- Always follow [LinkedIn pacing](#linkedin-pacing-mandatory--never-skip) — user silence is not permission to go fast
 - Stop a board on verification challenges; report as unavailable
 - Never apply, message employers, or change board settings
-- Stop LinkedIn activity on account warnings
+- Stop LinkedIn activity on account warnings; no retries this session
 
 ## Quality check
 
@@ -584,7 +604,7 @@ Before **pipeline** completion (Phase 1 + Phase 2):
 
 **Phase 1 (Jobgru):**
 
-1. Requested count appended (or fewer with source-exhaustion report; LinkedIn capped at 25; sheet has no row cap)
+1. Requested count appended (or fewer with source-exhaustion report; LinkedIn has **no** job-count cap; sheet has no row cap)
 2. Every row has Company, Position, apply URL in column C, `to apply`, date, Details in F
 3. No duplicate company+similar-role against pre-run snapshot
 4. Existing rows and columns K+ unchanged
@@ -593,7 +613,7 @@ Before **pipeline** completion (Phase 1 + Phase 2):
 
 **Phase 2 — LeadGru (automatic)**
 
-7. Every row in `[start_row, end_row]` has Leads (G) filled (4–10 `/in/` URLs or company page)
+7. Every row in `[start_row, end_row]` has Leads (G) filled (**≤5** `/in/` URLs **and** a `Company:` people-page URL)
 8. Every row in `[start_row, end_row]` has Add note Message (H) filled from templates
 9. LeadGru run JSON fields populated
 

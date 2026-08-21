@@ -29,7 +29,7 @@ Step 4 — Verify and layout:
   scripts/sheets_write.py read --range "A{start}:H{end}"
   scripts/sheets_write.py format-layout
 
-Target 4–10 verified people per row + Company: linkedin.com/company/... line.
+Target **at most 5** verified people per row + last line `Company: linkedin.com/company/.../people/`.
 Add note: rotate templates Q2–Q7, replace {Position}/{Company}/{Link}, change Hi {Name}, to Hi,
 Always fill Add note Message (H) — do not skip for any processed row.
 

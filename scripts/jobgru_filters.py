@@ -9,9 +9,11 @@ import sys
 
 RUN_LIMITS = {
     "max_jobs_per_run": None,
-    "max_linkedin_per_run": 25,
+    "max_linkedin_per_run": None,
     "linkedin_researchers": 1,
     "sheet_row_cap": None,
+    "leadgru_max_people_per_company": 5,
+    "leadgru_always_company_people_page": True,
 }
 
 FILTER_CATALOG: list[dict] = [
@@ -20,7 +22,7 @@ FILTER_CATALOG: list[dict] = [
         "name": "Target / count",
         "say": "Say how many jobs you want this run.",
         "examples": ["find 3 jobs", "find 10 jobs", "find up to 30 jobs"],
-        "limits": "No sheet row cap — append as many jobs as you ask for this run. LinkedIn still max 25 jobs per run (rate-limit safety).",
+        "limits": "No sheet row cap — append as many jobs as you ask for this run. LinkedIn has no per-run job cap; pacing + LeadGru (5 people + company people page) protect rate limits.",
     },
     {
         "id": "sources",
@@ -50,7 +52,7 @@ FILTER_CATALOG: list[dict] = [
             "Indeed",
             "YC Jobs",
         ],
-        "limits": "LinkedIn max 25 jobs per run (rate-limit safety). Other boards have no count cap. The sheet has no row cap. Runbooks in data/board-runbooks/ — other boards work via discovery mode.",
+        "limits": "LinkedIn has no per-run job cap. Other boards have no count cap. The sheet has no row cap. Runbooks in data/board-runbooks/ — other boards work via discovery mode.",
     },
     {
         "id": "roles",
@@ -280,8 +282,9 @@ def catalog_text() -> str:
         "",
         "Run limits:",
         "  • No sheet row cap — keep appending across runs (501, 2000, … all work)",
-        f"  • This run: use the Count you ask for (60 is fine). LinkedIn max {RUN_LIMITS['max_linkedin_per_run']}/run",
-        "  • One LinkedIn researcher per run",
+        "  • This run: use the Count you ask for (LinkedIn has no job-count cap)",
+        "  • One LinkedIn researcher per run; 40s between LinkedIn navigates",
+        f"  • LeadGru: max {RUN_LIMITS['leadgru_max_people_per_company']} people per company + company people page",
         "",
         "=" * 44,
         "",

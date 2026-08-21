@@ -6,7 +6,7 @@ Jobgru filter
 
 Lists every filter type you can use in a job-search prompt — plain-English names with **e.g.** examples.
 
-Run limits: **no sheet row cap**; this run uses your **Count** (60+ ok); **LinkedIn max 25 per run**.
+Run limits: **no sheet row cap**; this run uses your **Count**; **LinkedIn has no job-count cap**; LeadGru **5 people + company people page**.
 
 Terminal:
 
