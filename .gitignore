@@ -2,6 +2,7 @@
 data/runs/*.json
 data/resumes/*.pdf
 config/sheet.json
+browser-profile/
 .env
 *.credentials.json
 .venv/

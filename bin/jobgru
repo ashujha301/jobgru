@@ -95,7 +95,11 @@ print('OK: sheet profile updated (O2, Q2-Q7)')
     ;;
   update)
     if [[ -d "$JOBGRU_HOME/.git" ]]; then
-      git -C "$JOBGRU_HOME" pull --ff-only
+      git -C "$JOBGRU_HOME" fetch origin
+      # Engine must match GitHub. Keep gitignored data (sheet.json, resumes, venv, LinkedIn profile).
+      git -C "$JOBGRU_HOME" reset --hard origin/main
+      git -C "$JOBGRU_HOME" clean -fd
+      echo "==> Engine synced to $(git -C "$JOBGRU_HOME" log -1 --oneline)"
     fi
     "$PY" -m pip install -q -r "$SCRIPTS/requirements.txt"
     for entry in "$HOME/.cursor|cursor" "$HOME/.claude|claude" "$HOME/.codex|codex"; do
