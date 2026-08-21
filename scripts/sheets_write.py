@@ -179,18 +179,164 @@ def get_sheet_id(service, spreadsheet_id: str, tab: str) -> int:
 def last_data_row(service, spreadsheet_id: str, tab: str, *, start_row: int = 2) -> int:
     """Last row with a value in column A (1-based). Header-only sheet returns start_row - 1."""
     values = read_range(service, spreadsheet_id, tab, f"A{start_row}:A")
+    return last_occupied_row_from_values(values, start_row=start_row, columns=1)
+
+
+def last_occupied_row_from_values(
+    values: list[list],
+    *,
+    start_row: int = 2,
+    columns: int = 3,
+) -> int:
+    """Last 1-based row that has any non-empty cell in the first `columns` fields.
+
+    Used for append positioning so a blank Company (A) mid-sheet cannot pull
+    writes into the middle of existing Position/Apply data.
+    Header-only / empty sheet → start_row - 1.
+    """
     last = start_row - 1
     for idx, row in enumerate(values):
-        if row and str(row[0]).strip():
+        cells = list(row or [])
+        # Pad so short rows still check available cells
+        chunk = cells[:columns]
+        if any(str(c).strip() for c in chunk):
             last = start_row + idx
     return last
+
+
+def last_occupied_row(
+    service,
+    spreadsheet_id: str,
+    tab: str,
+    *,
+    start_row: int = 2,
+) -> int:
+    """Last row with any value in A–C (Company / Position / Apply link)."""
+    values = read_range(service, spreadsheet_id, tab, f"A{start_row}:C")
+    return last_occupied_row_from_values(values, start_row=start_row, columns=3)
+
+
+def append_cursor_path() -> Path:
+    from jobgru_home import get_jobgru_home
+
+    return get_jobgru_home() / "data" / "runs" / "sheet-append-cursor.json"
+
+
+def load_append_cursor(spreadsheet_id: str) -> dict | None:
+    path = append_cursor_path()
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if data.get("spreadsheet_id") != spreadsheet_id:
+        return None
+    return data
+
+
+def save_append_cursor(
+    *,
+    spreadsheet_id: str,
+    tab: str,
+    start_row: int,
+    end_row: int,
+    rows_written: int,
+) -> Path:
+    path = append_cursor_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "spreadsheet_id": spreadsheet_id,
+        "tab": tab,
+        "last_start_row": start_row,
+        "last_end_row": end_row,
+        "next_row": end_row + 1,
+        "rows_written": rows_written,
+        "updated_at": __import__("datetime").datetime.now(
+            __import__("datetime").timezone.utc
+        ).isoformat(),
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def next_append_row(
+    service,
+    spreadsheet_id: str,
+    tab: str,
+    *,
+    start_row: int = 2,
+) -> int:
+    """Row where the next Jobgru batch must begin (never inside existing data).
+
+    Primary signal: last occupied A–C row + 1 (a blank Company mid-sheet cannot
+    pull writes into existing Position/Apply rows).
+
+    Persisted cursor ``next_row`` is a floor from the last successful append so
+    the watermark cannot silently reset to a low row. If the cursor is ahead of
+    the sheet but the gap is empty (trailing rows deleted outside Jobgru), the
+    cursor is realigned to the sheet.
+    """
+    sheet_last = last_occupied_row(service, spreadsheet_id, tab, start_row=start_row)
+    sheet_next = max(sheet_last + 1, start_row)
+    cursor = load_append_cursor(spreadsheet_id)
+    cursor_next = int(cursor["next_row"]) if cursor and cursor.get("next_row") else None
+    if cursor_next is None or cursor_next <= sheet_next:
+        return sheet_next
+
+    # Cursor ahead of sheet occupancy — check whether the gap is empty.
+    if cursor_next > sheet_next:
+        gap = read_range(
+            service, spreadsheet_id, tab, f"A{sheet_next}:C{cursor_next - 1}"
+        )
+        gap_occupied = any(
+            any(str(c).strip() for c in (row or [])[:3]) for row in gap
+        )
+        if not gap_occupied:
+            save_append_cursor(
+                spreadsheet_id=spreadsheet_id,
+                tab=tab,
+                start_row=sheet_last if sheet_last >= 2 else 2,
+                end_row=sheet_last if sheet_last >= 2 else 1,
+                rows_written=0,
+            )
+            return sheet_next
+    return cursor_next
+
+
+def assert_append_range_clear(
+    service,
+    spreadsheet_id: str,
+    tab: str,
+    start_row: int,
+    num_rows: int,
+) -> None:
+    """Refuse to write over any occupied Company/Position/Apply cells."""
+    if num_rows <= 0:
+        return
+    end_row = start_row + num_rows - 1
+    values = read_range(service, spreadsheet_id, tab, f"A{start_row}:C{end_row}")
+    conflicts: list[int] = []
+    for idx, row in enumerate(values):
+        if any(str(c).strip() for c in (row or [])[:3]):
+            conflicts.append(start_row + idx)
+    if conflicts:
+        preview = ", ".join(str(r) for r in conflicts[:8])
+        more = f" (+{len(conflicts) - 8} more)" if len(conflicts) > 8 else ""
+        raise SystemExit(
+            f"Refusing to overwrite existing sheet data at row(s) {preview}{more}.\n"
+            f"Requested write: A{start_row}:H{end_row}.\n"
+            "Use `sheets_write.py first-empty` (next append row after last occupied A–C),\n"
+            "or omit --start-row so append picks the safe row automatically.\n"
+            "Pass --force-overwrite only if you intentionally mean to replace those cells."
+        )
 
 
 def layout_end_row(service, spreadsheet_id: str, tab: str) -> int:
     """Format through the sheet's current grid (grows as jobs are appended). No 500 cap."""
     props = get_sheet_properties(service, spreadsheet_id, tab)
     grid_rows = int(props.get("gridProperties", {}).get("rowCount") or 0)
-    used = last_data_row(service, spreadsheet_id, tab)
+    used = last_occupied_row(service, spreadsheet_id, tab)
     return max(grid_rows, used + 1, 2)
 
 
@@ -260,18 +406,13 @@ def delete_sheet_rows(
 
 
 def find_first_empty_row(service, spreadsheet_id: str, tab: str, *, start_row: int = 2) -> int:
-    quoted_tab = f"'{tab}'" if " " in tab else tab
-    result = (
-        service.spreadsheets()
-        .values()
-        .get(spreadsheetId=spreadsheet_id, range=f"{quoted_tab}!A{start_row}:A")
-        .execute()
-    )
-    values = result.get("values", [])
-    for idx, row in enumerate(values):
-        if not row or not str(row[0]).strip():
-            return start_row + idx
-    return start_row + len(values)
+    """Deprecated name — returns the next safe append row (after last occupied A–C).
+
+    Historically scanned for the first blank in column A, which could land inside
+    existing jobs when Company was empty but Position/Apply were filled. Jobgru
+    append must never use mid-sheet gaps.
+    """
+    return next_append_row(service, spreadsheet_id, tab, start_row=start_row)
 
 
 # Column widths (px) for Job Applications tab — keeps long text inside cells with wrap.
@@ -430,20 +571,48 @@ def cmd_append(args: argparse.Namespace) -> int:
     rows = json.loads(Path(args.file).read_text())
     if not isinstance(rows, list):
         raise SystemExit("--file must contain a JSON array of row arrays")
+    if not rows:
+        raise SystemExit("--file contains no rows to append")
 
-    if args.start_row:
-        end_row = args.start_row + len(rows) - 1
-        result = write_range(
-            service,
-            args.spreadsheet_id,
-            args.tab,
-            f"A{args.start_row}:H{end_row}",
-            rows,
-        )
+    safe_start = next_append_row(service, args.spreadsheet_id, args.tab)
+    if args.start_row is not None:
+        start_row = int(args.start_row)
+        if start_row < safe_start and not args.force_overwrite:
+            raise SystemExit(
+                f"--start-row {start_row} would overwrite or insert before existing data "
+                f"(next safe append row is {safe_start}).\n"
+                f"Omit --start-row, pass --start-row {safe_start}, or use "
+                f"--force-overwrite only if you intentionally mean to replace cells."
+            )
     else:
-        result = append_rows(service, args.spreadsheet_id, args.tab, rows)
+        start_row = safe_start
 
-    print(json.dumps(result, indent=2))
+    end_row = start_row + len(rows) - 1
+    if not args.force_overwrite:
+        assert_append_range_clear(
+            service, args.spreadsheet_id, args.tab, start_row, len(rows)
+        )
+
+    result = write_range(
+        service,
+        args.spreadsheet_id,
+        args.tab,
+        f"A{start_row}:H{end_row}",
+        rows,
+    )
+    cursor_path = save_append_cursor(
+        spreadsheet_id=args.spreadsheet_id,
+        tab=args.tab,
+        start_row=start_row,
+        end_row=end_row,
+        rows_written=len(rows),
+    )
+    out = dict(result)
+    out["startRow"] = start_row
+    out["endRow"] = end_row
+    out["nextRow"] = end_row + 1
+    out["appendCursor"] = str(cursor_path)
+    print(json.dumps(out, indent=2))
     return 0
 
 
@@ -470,9 +639,28 @@ def cmd_test(args: argparse.Namespace) -> int:
 
 
 def cmd_first_empty(args: argparse.Namespace) -> int:
+    """Print the next safe append row (after last occupied A–C + cursor floor)."""
     service = sheets_service()
-    row = find_first_empty_row(service, args.spreadsheet_id, args.tab, start_row=args.start_row)
-    print(row)
+    sheet_last = last_occupied_row(
+        service, args.spreadsheet_id, args.tab, start_row=args.start_row
+    )
+    row = next_append_row(
+        service, args.spreadsheet_id, args.tab, start_row=args.start_row
+    )
+    cursor = load_append_cursor(args.spreadsheet_id)
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "next_append_row": row,
+                    "last_occupied_row": sheet_last,
+                    "cursor": cursor,
+                },
+                indent=2,
+            )
+        )
+    else:
+        print(row)
     return 0
 
 
@@ -516,20 +704,30 @@ def cmd_delete_rows(args: argparse.Namespace) -> int:
         args.tab,
         max_row=args.max_row if args.max_row > 0 else None,
     )
-    next_empty = find_first_empty_row(service, args.spreadsheet_id, args.tab)
+    last = last_occupied_row(service, args.spreadsheet_id, args.tab)
+    next_row = max(last + 1, 2)
+    # Reset cursor watermark after compaction so max(sheet, cursor) cannot leave a gap.
+    save_append_cursor(
+        spreadsheet_id=args.spreadsheet_id,
+        tab=args.tab,
+        start_row=last if last >= 2 else 2,
+        end_row=last if last >= 2 else 1,
+        rows_written=0,
+    )
     print(
         json.dumps(
             {
                 "deleted_rows": rows,
                 "deleted_count": len(rows),
-                "next_empty_row": next_empty,
+                "next_append_row": next_row,
+                "next_empty_row": next_row,
                 "summary_formulas": "restored",
                 "format_layout": "applied",
             },
             indent=2,
         )
     )
-    print(f"OK: deleted {len(rows)} row(s); sheet compacted; next empty row is {next_empty}")
+    print(f"OK: deleted {len(rows)} row(s); sheet compacted; next append row is {next_row}")
     return 0
 
 
@@ -562,9 +760,21 @@ def build_parser() -> argparse.ArgumentParser:
     write_p.add_argument("--json", help='2D JSON array, e.g. \'[["a","b"]]\'')
     write_p.set_defaults(func=cmd_write)
 
-    append_p = sub.add_parser("append", help="Append rows from JSON file")
+    append_p = sub.add_parser(
+        "append",
+        help="Append job rows after the last occupied A–C row (never mid-sheet gaps)",
+    )
     append_p.add_argument("--file", required=True, help="JSON file: array of [A..H] rows")
-    append_p.add_argument("--start-row", type=int, help="Write at fixed row instead of append")
+    append_p.add_argument(
+        "--start-row",
+        type=int,
+        help="Optional fixed start row (must be >= next safe append row unless --force-overwrite)",
+    )
+    append_p.add_argument(
+        "--force-overwrite",
+        action="store_true",
+        help="Allow writing over non-empty Company/Position/Apply cells (dangerous)",
+    )
     append_p.set_defaults(func=cmd_append)
 
     test_p = sub.add_parser("test", help="Smoke test: write, read back, optional cleanup")
@@ -573,8 +783,16 @@ def build_parser() -> argparse.ArgumentParser:
     test_p.add_argument("--cleanup", action="store_true", help="Clear cell after verify")
     test_p.set_defaults(func=cmd_test)
 
-    empty_p = sub.add_parser("first-empty", help="Print first empty row in column A")
+    empty_p = sub.add_parser(
+        "first-empty",
+        help="Print next safe append row (after last occupied A–C + last-run cursor floor)",
+    )
     empty_p.add_argument("--start-row", type=int, default=2)
+    empty_p.add_argument(
+        "--json",
+        action="store_true",
+        help="Print next_append_row, last_occupied_row, and cursor as JSON",
+    )
     empty_p.set_defaults(func=cmd_first_empty)
 
     fmt_p = sub.add_parser(

@@ -128,8 +128,52 @@ class LastDataRowTests(unittest.TestCase):
                     }
                 return {"values": [["Co"]] * self.n}
 
-        meta = FakeMeta(554)
-        self.assertGreaterEqual(layout_end_row(meta, "id", "Job Applications"), 555)
+        self.assertEqual(layout_end_row(FakeMeta(554), "id", "Job Applications"), 1000)
+
+
+class AppendSafetyTests(unittest.TestCase):
+    def test_blank_company_mid_sheet_does_not_become_append_point(self):
+        from sheets_write import last_occupied_row_from_values
+
+        # Rows 2-21 filled, row 22 blank company + title, rows 23-27 filled.
+        values = [["Co", "Role", "https://x"]] * 20
+        values.append(["", "AI Engineer", "https://gap.example"])
+        values.extend([["LaterCo", "SWE", "https://y"]] * 5)
+        last = last_occupied_row_from_values(values, start_row=2, columns=3)
+        self.assertEqual(last, 27)  # last LaterCo
+        self.assertEqual(last + 1, 28)
+
+        # Old first-blank-in-A behavior would have returned row 22:
+        first_blank_a = None
+        for idx, row in enumerate(values):
+            if not row or not str(row[0]).strip():
+                first_blank_a = 2 + idx
+                break
+        self.assertEqual(first_blank_a, 22)
+        self.assertGreater(last + 1, first_blank_a)
+
+    def test_cursor_roundtrip(self):
+        import tempfile
+        from pathlib import Path
+        import sheets_write as sw
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sheet-append-cursor.json"
+            original = sw.append_cursor_path
+            sw.append_cursor_path = lambda: path
+            try:
+                sw.save_append_cursor(
+                    spreadsheet_id="sheet123",
+                    tab="Job Applications",
+                    start_row=79,
+                    end_row=134,
+                    rows_written=56,
+                )
+                loaded = sw.load_append_cursor("sheet123")
+                self.assertEqual(loaded["next_row"], 135)
+                self.assertIsNone(sw.load_append_cursor("other"))
+            finally:
+                sw.append_cursor_path = original
 
 
 if __name__ == "__main__":

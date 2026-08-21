@@ -365,14 +365,18 @@ Smoke test before first real write:
 
 Expect stdout: `OK: Sheets API write verified`
 
-### Step 1 — Find first empty row
+### Step 1 — Find next append row (never mid-sheet gaps)
 
 ```bash
 START_ROW=$(.venv/bin/python scripts/sheets_write.py first-empty)
-echo "First empty row: $START_ROW"
+echo "Next append row: $START_ROW"
+# Optional detail (last occupied + persisted cursor):
+.venv/bin/python scripts/sheets_write.py first-empty --json
 ```
 
-`first-empty` scans column A from row 2; returns the row number (e.g. `22`).
+`first-empty` returns the **next safe append row**: one past the last row that has any Company / Position / Apply link (A–C). It does **not** use the first blank in column A — that old behavior could land inside existing jobs when Company was empty but Position/Apply were filled.
+
+After each successful append, Jobgru also writes `data/runs/sheet-append-cursor.json` (`next_row`, `last_end_row`). That cursor is a watermark from the last run; `append` refuses `--start-row` values that would overwrite occupied cells.
 
 ### Step 2 — Build row JSON file
 
@@ -428,6 +432,8 @@ Use `--start-row` with the value from Step 1. For N jobs starting at row R, API 
   --file data/runs/pending-rows-<YYYY-MM-DD>.json \
   --start-row "$START_ROW"
 ```
+
+Prefer omitting `--start-row` so `append` picks the safe row itself. If `--start-row` is below the next safe row, or the target A–C cells are occupied, the command **exits with an error** instead of overwriting (override only with `--force-overwrite`).
 
 Success output includes:
 
@@ -557,9 +563,11 @@ Run from **project root**:
 
 | Command | Purpose |
 | --- | --- |
-| `.venv/bin/python scripts/sheets_write.py first-empty` | First empty row in column A |
+| `.venv/bin/python scripts/sheets_write.py first-empty` | Next safe append row (after last occupied A–C) |
+| `.venv/bin/python scripts/sheets_write.py first-empty --json` | Same + last_occupied_row + sheet-append-cursor |
 | `.venv/bin/python scripts/sheets_write.py read --range "A2:H"` | Read for dedupe (open-ended — all job rows) |
-| `.venv/bin/python scripts/sheets_write.py append --file FILE --start-row N` | Write N rows at row N |
+| `.venv/bin/python scripts/sheets_write.py append --file FILE` | Append after last occupied row; saves cursor |
+| `.venv/bin/python scripts/sheets_write.py append --file FILE --start-row N` | Write at N only if safe (refuses overwrite) |
 | `.venv/bin/python scripts/sheets_write.py read --range "A{N}:H{M}"` | Verify after write |
 | `.venv/bin/python scripts/sheets_write.py test --cleanup` | Auth smoke test |
 | `.venv/bin/python scripts/sheets_write.py format-layout` | Wrap text + column widths (run after batch writes if cells overflow) |

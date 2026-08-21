@@ -82,9 +82,11 @@ All commands from **project root**:
 | `auth login` | One-time OAuth (Option B) |
 | `auth status` | Check saved OAuth token |
 | `test --cleanup` | Write/read/clear smoke test on A22 |
-| `first-empty` | Print first empty row in column A |
+| `first-empty` | Print next safe append row (after last occupied A–C + last-run cursor) |
+| `first-empty --json` | Include `last_occupied_row` and `data/runs/sheet-append-cursor.json` |
 | `read --range "A2:H"` | Read all job rows (open-ended) |
-| `append --file FILE --start-row N` | Write job rows (Jobgru) |
+| `append --file FILE` | Append after last occupied row; refuses mid-sheet overwrite |
+| `append --file FILE --start-row N` | Write at N only when safe (`--force-overwrite` to bypass) |
 | `write --range "G5:H5" --json '[["a","b"]]'` | Write Leads + note (LeadGru) |
 | `format-layout` | Wrap text + column widths for F/G/H/O (prevents overflow) |
 
