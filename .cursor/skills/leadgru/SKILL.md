@@ -63,6 +63,8 @@ Rules in pipeline mode:
 
 Use [prompts/leadgru-run.md](../../prompts/leadgru-run.md) for standalone backfill prompts.
 
+**SendGru is separate:** LeadGru finds people and fills note templates; it **does not** send LinkedIn invites. Sending is on-demand via [sendgru/SKILL.md](../sendgru/SKILL.md) when Status is **applied**.
+
 ## Prerequisites (user setup)
 
 Run **Jobgru check** first: `.venv/bin/python scripts/jobgru_check.py` — or say **Jobgru check** in chat.
@@ -234,14 +236,26 @@ Substitute:
 | `{Company}` | Column A (Company Name) — use full name as written |
 | `{Link}` | Resume URL from cell **O2**, or `resume_link` in `config/sheet.json` |
 
-Always change `Hi {Name},` → `Hi,`. **Do not** include any lead name.
+Always use greeting `Hi,` — never `Hi {Name},` and never a lead name. Do not append your own name (they see it on your LinkedIn profile). End with `Thanks` (no `!`).
 
-Write only if Add note Message (column H) is empty.
+**Length:** filled H must be **≤ 200 characters**. Do not write the raw template. Fill via:
 
-Example output (template 1, row 22):
+```bash
+.venv/bin/python scripts/leadgru_notes.py fill \
+  --template "TEMPLATE_FROM_Q" \
+  --position "COLUMN_B" \
+  --company "COLUMN_A" \
+  --link "O2_OR_CONFIG"
+```
+
+The script substitutes `{Position}` `{Company}` `{Link}`, and clamps to 200 while keeping the resume short link and `Thanks`.
+
+Write only if Add note Message (column H) is empty. **Do not overwrite existing H notes.**
+
+Example output (template 1, short job):
 
 ```
-Hi, I just applied for the AI Engineer role at Businessonbot (Y Combinator W21) and would truly appreciate a referral or a quick push to the hiring team. Here's my resume for you: https://bit.ly/ajha Thank you so much! - Ayush Jha
+Hi, I just applied for AI Engineer at Acme and would appreciate a referral. Resume: https://bit.ly/ajha Thanks
 ```
 
 ---
@@ -526,7 +540,7 @@ Do **not** open duplicate sheet tabs for writing.
 2. No pre-filled Leads rows changed
 3. Each new Leads cell (G) has **≤5** verified `/in/` links **and** a `Company:` people-page URL (or people page alone if nobody verified)
 4. Every `/in/` URL verified (not guessed slugs)
-5. Add note Message (H) has role, company, resume link, greeting `Hi,`, no lead names
+5. Add note Message (H) has role, company, resume link, greeting `Hi,`, no names, ends with `Thanks`, **≤ 200 chars**
 6. Columns A–F, E, K+ unchanged; **I (ATS score)** and **J (Suggestions on Resume)** untouched by LeadGru
 7. Sheets API verify passed for processed range
 

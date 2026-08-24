@@ -77,6 +77,16 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("/people/", skill)
         self.assertIn("Sleep 40 seconds", skill)
         self.assertIn("Never write 6+", skill)
+        self.assertIn("SendGru", skill)
+
+    def test_sendgru_skill_contract(self):
+        skill = _read(".cursor/skills/sendgru/SKILL.md")
+        self.assertIn("Sent add note", skill)
+        self.assertIn("2", skill)
+        self.assertIn("applied", skill)
+        self.assertIn("Never", skill)
+        self.assertIn("300", skill)
+        self.assertNotIn("hard-caps at **200**", skill)
 
     def test_docs_and_prompts_uncapped(self):
         for rel in (

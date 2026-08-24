@@ -30,8 +30,7 @@ Step 4 — Verify and layout:
   scripts/sheets_write.py format-layout
 
 Target **at most 5** verified people per row + last line `Company: linkedin.com/company/.../people/`.
-Add note: rotate templates Q2–Q7, replace {Position}/{Company}/{Link}, change Hi {Name}, to Hi,
-Always fill Add note Message (H) — do not skip for any processed row.
+Add note: rotate Q2–Q7, fill with `scripts/leadgru_notes.py fill` (≤ 200 chars, Hi, + Thanks, no names). Do not overwrite existing H.
 
 Do not send messages, InMails, connection requests, or applications.
 Stop and report CAPTCHA, login, or rate-limit warnings on LinkedIn.

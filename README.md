@@ -11,6 +11,7 @@ Works in **Cursor, Claude Code, Codex**, or any agent — install once, use `/jo
 | | | Runbooks for 11 boards: LinkedIn, Wellfound, Remote Rocketship, DailyRemote, RemoteOK, We Work Remotely, Remotive, Himalayas, Working Nomads, Indeed, YC Jobs |
 | **Phase 2 — LeadGru** | `leadgru` | LinkedIn leads (max 5 people + company people page) + notes (automatic, parallel) |
 | **Phase 2b — ATSScore** | `atsscore` | Resume fit scores (Python, parallel) |
+| **On-demand — SendGru** | `sendgru` | Send LinkedIn connection + add note for **applied** rows you name (2 people/row; H → `Sent add note`). **Not** in the pipeline. |
 
 ---
 

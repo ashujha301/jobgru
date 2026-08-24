@@ -31,12 +31,6 @@ def apply_user_profile(
         text = row[0] if row else ""
         if "Your Name" in text:
             text = text.replace("Your Name", your_name)
-        elif text.rstrip().endswith("- Ayush Jha"):
-            text = text.rsplit("-", 1)[0].rstrip() + f" - {your_name}"
-        elif " - " in text and not text.endswith(your_name):
-            # Replace trailing signature after last " - "
-            base, _ = text.rsplit(" - ", 1)
-            text = f"{base} - {your_name}"
         updated.append([text])
 
     write_range(service, spreadsheet_id, tab, "Q2:Q7", updated)

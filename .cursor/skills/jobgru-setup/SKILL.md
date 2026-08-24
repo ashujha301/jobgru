@@ -34,6 +34,7 @@ Everything else is handled by this skill.
 | "Jobgru filter", "what filters", list filters | **filter** |
 | "Jobgru prompts", example prompt, job search prompt | **prompts** |
 | "Jobgru delete", delete rows | **delete** |
+| "SendGru", send add notes, connection notes + rows | **sendgru** → read [sendgru/SKILL.md](../sendgru/SKILL.md) (**on-demand only; not in pipeline**) |
 
 If unclear, run **check** first and report what's missing.
 

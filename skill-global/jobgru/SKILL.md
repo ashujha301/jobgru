@@ -21,6 +21,7 @@ All shell commands use `$JOBGRU_HOME/.venv/bin/python $JOBGRU_HOME/scripts/...` 
 | prompts, example prompt, job search prompt | Run `$JOBGRU_HOME/.venv/bin/python $JOBGRU_HOME/scripts/jobgru_prompts.py` or `jobgru prompts` |
 | delete rows, remove jobs from sheet | `$JOBGRU_HOME/.cursor/skills/jobgru-setup/SKILL.md` → **delete** |
 | job search, find jobs, pipeline | `$JOBGRU_HOME/.cursor/skills/jobgru/SKILL.md` (+ leadgru, atsscore after Phase 1) |
+| send add notes, SendGru, send connection notes + row range | `$JOBGRU_HOME/.cursor/skills/sendgru/SKILL.md` (**on-demand only — not in pipeline**) |
 
 Resolve `JOBGRU_HOME`:
 ```bash
@@ -42,6 +43,8 @@ The Playwright profile lives at `~/.jobgru/browser-profile` — LinkedIn login p
 User completes MFA/CAPTCHA manually in the visible browser window.
 
 **LinkedIn pacing is always on** (Jobgru LinkedIn Jobs + LeadGru). Read it in `$JOBGRU_HOME/.cursor/skills/jobgru/SKILL.md` and `leadgru/SKILL.md`. Default: **40s sleep before every LinkedIn navigate** except the first after lock; one LinkedIn tab; stop on CAPTCHA/rate-limit with no retries. LinkedIn has **no job-count cap**; LeadGru writes **at most 5 people + company people page**. Do not skip pacing because the user omitted “go slow”.
+
+**SendGru** (connection + add note send) is **on-demand only** — see `sendgru/SKILL.md`. Sends **2 people per applied row**; sets column H to `Sent add note`. **Never** runs in the pipeline.
 
 ## Quick commands
 

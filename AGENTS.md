@@ -25,6 +25,7 @@ Engine: `~/.jobgru` · Router skills: `~/.cursor/skills/jobgru/`, `~/.claude/ski
 | `Jobgru prompts` | Example prompts to copy, edit, paste |
 | `Jobgru delete` | Delete sheet rows |
 | Job search | [jobgru/SKILL.md](.cursor/skills/jobgru/SKILL.md) |
+| Send add notes (on-demand) | [sendgru/SKILL.md](.cursor/skills/sendgru/SKILL.md) |
 
 ## Manual terminal (user only)
 
@@ -50,6 +51,7 @@ gcloud auth login --enable-gdrive-access --update-adc
 | Phase 1 | `.cursor/skills/jobgru/SKILL.md` |
 | Phase 2 | `.cursor/skills/leadgru/SKILL.md` |
 | Phase 2b | `.cursor/skills/atsscore/SKILL.md` |
+| On-demand send | `.cursor/skills/sendgru/SKILL.md` |
 
 ## Health check
 

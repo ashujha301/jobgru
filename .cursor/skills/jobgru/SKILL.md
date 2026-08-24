@@ -55,7 +55,7 @@ After Phase 1 sheet write is verified:
 
 **Exception:** If LinkedIn blocks during LeadGru, report Phase 1 complete and LeadGru partial — ATSScore may still complete. Do **not** re-run Phase 1.
 
-Standalone backfill: LeadGru alone → leadgru skill; ATS alone → atsscore skill.
+Standalone backfill: LeadGru alone → leadgru skill; ATS alone → atsscore skill. **SendGru** (LinkedIn invite + note send) is on-demand only — see [sendgru/SKILL.md](../sendgru/SKILL.md); **never** runs after Phase 1/2.
 
 ## Help and check (before pipeline)
 

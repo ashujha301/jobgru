@@ -1,0 +1,119 @@
+{
+  "runbook_id": "connect-add-note",
+  "purpose": "SendGru — LinkedIn connection invitation with personalized note",
+  "status": "active",
+  "discovered_at": "2026-08-24",
+  "last_ok": null,
+  "prerequisites": [
+    "LinkedIn logged in (Premium recommended for unlimited notes)",
+    "Column H note length 1-300 characters before send (Premium)",
+    "One browser tab only"
+  ],
+  "pacing_seconds": {
+    "before_profile_navigate_after_first": 60,
+    "before_profile_navigate_after_first_max": 90,
+    "after_profile_load": 3,
+    "after_connect_click": 2,
+    "after_add_note_click": 1,
+    "after_paste_note": 1,
+    "after_send_click": 5,
+    "between_companies_extra": 30
+  },
+  "daily_send_cap": 20,
+  "stop_phrases": [
+    "unusual activity",
+    "verify your identity",
+    "security verification",
+    "captcha",
+    "weekly invitation limit",
+    "you've reached the weekly",
+    "invitation limit",
+    "temporarily restricted"
+  ],
+  "steps": [
+    {
+      "id": "navigate_profile",
+      "action": "browser_navigate",
+      "url": "{PROFILE_URL}",
+      "wait_after_sec": 3,
+      "notes": "First profile after lock: no pre-navigate sleep. Every later profile: sleep 60-90s BEFORE this navigate."
+    },
+    {
+      "id": "lock_tab",
+      "action": "browser_lock",
+      "params": { "action": "lock" },
+      "once_per_session": true
+    },
+    {
+      "id": "snapshot_profile",
+      "action": "browser_snapshot",
+      "compact": true,
+      "notes": "Confirm profile loaded; check stop_phrases in page text via CDP if needed"
+    },
+    {
+      "id": "skip_if_connected",
+      "action": "check_snapshot",
+      "skip_if_text": ["Message", "Pending"],
+      "skip_if_missing": ["Connect", "Invite"],
+      "notes": "If already 1st-degree (Message only) or Pending, skip person — do not mark row Sent"
+    },
+    {
+      "id": "click_connect",
+      "action": "browser_click",
+      "target": "Connect",
+      "fallback": [
+        { "action": "browser_click", "target": "More" },
+        { "action": "browser_click", "target": "Connect" }
+      ],
+      "wait_after_sec": 2
+    },
+    {
+      "id": "click_add_note",
+      "action": "browser_click",
+      "target": "Add a note",
+      "alternate_labels": ["Add note"],
+      "wait_after_sec": 1,
+      "skip_if_missing": "Send without a note — skip person, report no note option"
+    },
+    {
+      "id": "fill_note",
+      "action": "browser_fill_or_type",
+      "text": "{NOTE_TEXT}",
+      "notes": "Paste exact column H text. Re-check length <= 300 (Premium). Do not edit sheet in browser."
+    },
+    {
+      "id": "click_send",
+      "action": "browser_click",
+      "target": "Send",
+      "alternate_labels": ["Send invitation", "Send now"],
+      "wait_after_sec": 5
+    },
+    {
+      "id": "verify_sent",
+      "action": "browser_snapshot",
+      "notes": "Dialog should close; profile may show Pending. On failure do not write Sent add note."
+    }
+  ],
+  "after_row_success": {
+    "sheet_write": {
+      "column": "H",
+      "value": "Sent add note",
+      "method": "sheets_api_only",
+      "command": ".venv/bin/python scripts/sheets_write.py write --range H{ROW} --value \"Sent add note\""
+    },
+    "condition": "At least one person on row sent successfully; mark row only after finishing all sendable people for that row (up to 2)"
+  },
+  "after_session": {
+    "action": "browser_lock",
+    "params": { "action": "unlock" }
+  },
+  "rules": [
+    "Never type into Google Sheet in browser",
+    "Never run in Jobgru pipeline — user must name rows explicitly",
+    "Max 2 /in/ URLs per row from column G",
+    "Only rows with Status applied",
+    "Skip rows where H is already Sent add note",
+    "Stop entire session on stop_phrases — no retries",
+    "Do not send InMail — connection invite + note only"
+  ]
+}
