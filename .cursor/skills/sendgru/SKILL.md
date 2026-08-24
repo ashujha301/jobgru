@@ -1,6 +1,6 @@
 ---
 name: sendgru
-description: Jobgru on-demand — send LinkedIn connection invites with add-note text for user-named sheet rows. Only Status applied; 2 people per row from Leads; overwrites H with Sent add note after success. Never runs in the Jobgru pipeline. Use when the user says SendGru, send add notes, send connection notes, or names rows to send invites.
+description: Jobgru on-demand — send LinkedIn connection invites with add-note text for user-named sheet rows. Only Status applied; 2 people per row from Leads; appends Sent add note to column H after success (does not replace the note). Never runs in the Jobgru pipeline. Use when the user says SendGru, send add notes, send connection notes, or names rows to send invites.
 ---
 
 # SendGru (on-demand connection + note)
@@ -19,8 +19,8 @@ LeadGru is unchanged: it still finds **5 people + company people page** on `to a
 | People per row | **2** — first two `/in/` URLs in column G; skip `Company:` line |
 | Note source | Column H **before** send (LeadGru template text) |
 | Note length | **1–300** characters (Premium desktop). Skip if empty or over 300 |
-| After success | Overwrite H with exactly **`Sent add note`** via Sheets API |
-| Already sent | Skip if H is already `Sent add note` |
+| After success | **Append** ` Sent add note` to the existing H text (same cell; do not replace) |
+| Already sent | Skip if H already contains `Sent add note` |
 | Sheet writes | **Sheets API only** — never browser-type into the sheet |
 | LinkedIn tabs | **One** tab |
 | Daily cap | **20** sends per run (use `--apply-daily-cap` on select script) |
@@ -79,15 +79,16 @@ Follow runbook steps in order:
 
 ### 4 — Mark row done
 
-After finishing a row (sent 1–2 people successfully on that row):
+After finishing a row (sent 1–2 people successfully on that row), **append** `Sent add note` to the existing H text. Never replace the note.
 
 ```bash
-.venv/bin/python scripts/sheets_write.py write --range "H{ROW}" --value "Sent add note"
+.venv/bin/python scripts/sendgru_select.py --rows "{ROW}" --mark-sent
 ```
 
 - Mark row **only** if at least one invite sent successfully for that row
-- If both people skipped (already connected), **do not** write `Sent add note` — report row
+- If both people skipped (already connected), **do not** append `Sent add note` — report row
 - If session stopped mid-row due to rate limit, **do not** mark partial rows unless user confirms
+- Do **not** `sheets_write.py write --value "Sent add note"` — that wipes the template text
 
 ### 5 — Unlock and report
 
@@ -116,14 +117,15 @@ Save summary to `data/runs/sendgru-<YYYY-MM-DD-HHMM>.json`:
 | B | Position | Read |
 | D | Status | Must be **applied** |
 | G | Leads | Read — first **2** `/in/` only |
-| H | Add note Message | Read note → write **`Sent add note`** after send |
+| H | Add note Message | Read note to send → **append** ` Sent add note` after send |
 
 ## What not to do
 
 - Do not run after every job search
 - Do not send to 5 people per company (LeadGru bench stays on sheet; you send 2)
 - Do not send if H is empty or over **300** chars (Premium limit)
-- Do not overwrite H with `Sent add note` if zero invites sent on that row
+- Do not replace H with only `Sent add note` — always append to the existing text
+- Do not append `Sent add note` if zero invites sent on that row
 - Do not use InMail
 - Do not parallel LinkedIn tabs
 - Do not retry after CAPTCHA / weekly limit in the same session
@@ -143,7 +145,7 @@ Copy from [`prompts/sendgru-run.md`](../../prompts/sendgru-run.md).
 
 1. Unit tests: `python -m unittest tests.test_sendgru_select`
 2. Dry run: `sendgru_select.py --rows "N"` — confirm actionable/skipped
-3. Live: **one** applied row (2 sends max), then re-run → row skipped as already sent
+3. Live: **one** applied row (2 sends max), then re-run → row skipped (H contains `Sent add note`)
 4. Larger ranges only after a clean single-row test
 
 ## Related skills

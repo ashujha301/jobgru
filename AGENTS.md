@@ -25,7 +25,7 @@ Engine: `~/.jobgru` · Router skills: `~/.cursor/skills/jobgru/`, `~/.claude/ski
 | `Jobgru prompts` | Example prompts to copy, edit, paste |
 | `Jobgru delete` | Delete sheet rows |
 | Job search | [jobgru/SKILL.md](.cursor/skills/jobgru/SKILL.md) |
-| Send add notes (on-demand) | [sendgru/SKILL.md](.cursor/skills/sendgru/SKILL.md) |
+| Send add notes (on-demand) | [sendgru/SKILL.md](.cursor/skills/sendgru/SKILL.md) — appends `Sent add note` to H |
 
 ## Manual terminal (user only)
 

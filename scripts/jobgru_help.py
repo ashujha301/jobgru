@@ -53,7 +53,7 @@ CHAT commands (Cursor / Claude Code / Codex — any folder):
   Jobgru filter    List filter types for job-search prompts
   Jobgru prompts   Copy-edit-paste example prompts for a job run
   Jobgru delete    Delete sheet rows (e.g. rows 42-44 or 42,43,44)
-  SendGru rows N   Send LinkedIn connection + note (applied rows only, on-demand)
+  SendGru rows N   Send LinkedIn connection + note (applied rows; appends Sent add note to H)
   /jobgru + search Run full pipeline (jobs → leads → ATS)
 
 TERMINAL commands:
@@ -85,7 +85,7 @@ Pipeline phases (one job-search prompt):
   Phase 2  LeadGru  LinkedIn contacts → columns G/H (needs browser)
   Phase 2b ATSScore Resume fit → columns I/J (needs PDF in data/resumes/)
   SendGru  On-demand only — send connection + note for applied rows you name
-           (2 people/row; column H → "Sent add note"). Not in pipeline.
+           (2 people/row; appends "Sent add note" to column H). Not in pipeline.
 
 Docs: README.md · Troubleshooting: docs/SETUP.md
 """
@@ -112,7 +112,7 @@ def help_json() -> dict:
             "Jobgru filter": "Filter catalog for job-search prompts",
             "Jobgru prompts": "Copy-edit-paste example prompts for a job run",
             "Jobgru delete": "Delete rows from sheet (single, list, or range)",
-            "SendGru rows": "On-demand LinkedIn connection + add note (applied rows only)",
+            "SendGru rows": "On-demand LinkedIn connection + add note (applied rows; appends Sent add note to H)",
             "/jobgru + search": "Full pipeline: Jobgru + LeadGru + ATSScore",
         },
         "terminal_commands": {

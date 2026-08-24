@@ -11,7 +11,7 @@ Works in **Cursor, Claude Code, Codex**, or any agent — install once, use `/jo
 | | | Runbooks for 11 boards: LinkedIn, Wellfound, Remote Rocketship, DailyRemote, RemoteOK, We Work Remotely, Remotive, Himalayas, Working Nomads, Indeed, YC Jobs |
 | **Phase 2 — LeadGru** | `leadgru` | LinkedIn leads (max 5 people + company people page) + notes (automatic, parallel) |
 | **Phase 2b — ATSScore** | `atsscore` | Resume fit scores (Python, parallel) |
-| **On-demand — SendGru** | `sendgru` | Send LinkedIn connection + add note for **applied** rows you name (2 people/row; H → `Sent add note`). **Not** in the pipeline. |
+| **On-demand — SendGru** | `sendgru` | Send LinkedIn connection + add note for **applied** rows you name (2 people/row; appends `Sent add note` to column H). **Not** in the pipeline. |
 
 ---
 
@@ -245,6 +245,7 @@ LeadGru backfill rows 42-43 — use Playwright MCP with my signed-in LinkedIn se
 | **Jobgru prompts** | Example prompts to copy, edit, paste |
 | **Jobgru delete** | Delete sheet rows (42, 42-44, 42,43,44) |
 | **Jobgru ats** | Re-score ATS for specific rows (`jobgru ats --rows 42-44`) |
+| **SendGru** + rows | Send LinkedIn connection + add note for **applied** rows (`SendGru rows 4-12`). Appends `Sent add note` to H; does not replace the note. **Not** in the pipeline. |
 | **/jobgru** + job search | Full pipeline (jobs → leads → ATS) |
 
 Prompts: [jobgru-run.md](https://github.com/ashujha301/jobgru/blob/main/prompts/jobgru-run.md) · [prompts.md](prompts/prompts.md) · [setup.md](prompts/setup.md) · [filter.md](prompts/filter.md)

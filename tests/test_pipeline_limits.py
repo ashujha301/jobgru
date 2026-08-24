@@ -82,11 +82,22 @@ class SkillContractTests(unittest.TestCase):
     def test_sendgru_skill_contract(self):
         skill = _read(".cursor/skills/sendgru/SKILL.md")
         self.assertIn("Sent add note", skill)
+        self.assertIn("append", skill.lower())
+        self.assertIn("--mark-sent", skill)
         self.assertIn("2", skill)
         self.assertIn("applied", skill)
         self.assertIn("Never", skill)
         self.assertIn("300", skill)
         self.assertNotIn("hard-caps at **200**", skill)
+        self.assertNotIn('write --range "H{ROW}" --value "Sent add note"', skill)
+
+    def test_readme_lists_sendgru_command(self):
+        readme = _read("README.md")
+        self.assertIn("SendGru", readme)
+        self.assertIn("append", readme.lower())
+        commands = readme.split("## Chat commands")[1].split("## Quick reference")[0]
+        self.assertIn("SendGru", commands)
+        self.assertNotIn("H → `Sent add note`", readme)
 
     def test_docs_and_prompts_uncapped(self):
         for rel in (

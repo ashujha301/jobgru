@@ -91,15 +91,15 @@
     {
       "id": "verify_sent",
       "action": "browser_snapshot",
-      "notes": "Dialog should close; profile may show Pending. On failure do not write Sent add note."
+      "notes": "Dialog should close; profile may show Pending. On failure do not append Sent add note."
     }
   ],
   "after_row_success": {
     "sheet_write": {
       "column": "H",
-      "value": "Sent add note",
+      "value": "existing H text + Sent add note",
       "method": "sheets_api_only",
-      "command": ".venv/bin/python scripts/sheets_write.py write --range H{ROW} --value \"Sent add note\""
+      "command": ".venv/bin/python scripts/sendgru_select.py --rows {ROW} --mark-sent"
     },
     "condition": "At least one person on row sent successfully; mark row only after finishing all sendable people for that row (up to 2)"
   },
@@ -112,7 +112,7 @@
     "Never run in Jobgru pipeline — user must name rows explicitly",
     "Max 2 /in/ URLs per row from column G",
     "Only rows with Status applied",
-    "Skip rows where H is already Sent add note",
+    "Skip rows where H already contains Sent add note",
     "Stop entire session on stop_phrases — no retries",
     "Do not send InMail — connection invite + note only"
   ]

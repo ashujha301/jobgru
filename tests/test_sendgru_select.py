@@ -14,6 +14,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from sendgru_select import (  # noqa: E402
     MAX_NOTE_CHARS,
     SENT_MARKER,
+    append_sent_marker,
     apply_daily_cap,
     evaluate_row,
     is_sent_marker,
@@ -100,6 +101,14 @@ class EvaluateRowTests(unittest.TestCase):
         )
         self.assertIn("Sent add note", t.skip_reason)
 
+    def test_appended_marker_skipped(self):
+        note = f"Hi, please refer me. Thanks {SENT_MARKER}"
+        t = evaluate_row(
+            5,
+            self._cells(status="applied", leads="X — https://www.linkedin.com/in/x/", note=note),
+        )
+        self.assertIn("Sent add note", t.skip_reason)
+
     def test_over_200_still_ok_premium(self):
         t = evaluate_row(
             5,
@@ -113,6 +122,21 @@ class EvaluateRowTests(unittest.TestCase):
             self._cells(status="applied", leads="X — https://www.linkedin.com/in/x/", note="x" * 301),
         )
         self.assertIn("too long", t.skip_reason)
+
+
+class AppendMarkerTests(unittest.TestCase):
+    def test_appends_without_replacing(self):
+        note = "Hi, please refer me. Thanks"
+        self.assertEqual(append_sent_marker(note), f"{note} {SENT_MARKER}")
+
+    def test_does_not_double_append(self):
+        note = f"Hi, please refer me. Thanks {SENT_MARKER}"
+        self.assertEqual(append_sent_marker(note), note)
+
+    def test_legacy_exact_marker_is_sent(self):
+        self.assertTrue(is_sent_marker(SENT_MARKER))
+        self.assertTrue(is_sent_marker(f"Hi Thanks {SENT_MARKER}"))
+        self.assertFalse(is_sent_marker("Hi, please refer me. Thanks"))
 
 
 class DailyCapTests(unittest.TestCase):

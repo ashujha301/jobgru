@@ -14,14 +14,14 @@ Use sendgru skill. Sheets API for reads/writes only.
 Step 1 — Select targets:
   .venv/bin/python scripts/sendgru_select.py --rows "4-12" --apply-daily-cap
 
-Step 2 — For each actionable row (Status applied, H not "Sent add note"):
+Step 2 — For each actionable row (Status applied, H does not already contain "Sent add note"):
   - Send column H note to first 2 /in/ URLs in column G
   - Follow data/linkedin-runbooks/connect-add-note.json
   - 60-90s sleep before each profile navigate (after the first)
   - Stop on CAPTCHA / weekly invitation limit
 
-Step 3 — After row completes (1-2 successful sends):
-  .venv/bin/python scripts/sheets_write.py write --range "H{ROW}" --value "Sent add note"
+Step 3 — After row completes (1-2 successful sends), append (do not replace) H:
+  .venv/bin/python scripts/sendgru_select.py --rows "{ROW}" --mark-sent
 
 Do not send if H is empty or over 300 characters (Premium).
 Do not auto-run after Jobgru.
@@ -39,8 +39,8 @@ Do not auto-run after Jobgru.
 
 - Status (D) = **applied** (case-insensitive)
 - Leads (G) has at least one `/in/` URL
-- Add note Message (H) = template text, **1–300 chars** (Premium), not already `Sent add note`
+- Add note Message (H) = template text, **1–300 chars** (Premium), does not already contain `Sent add note`
 
 ## After send
 
-Column H becomes exactly: **`Sent add note`**
+Column H keeps the original note and **appends** ` Sent add note` in the same cell.

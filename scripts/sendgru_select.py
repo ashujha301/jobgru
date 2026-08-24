@@ -93,7 +93,18 @@ def note_length_ok(note: str) -> tuple[bool, str]:
 
 
 def is_sent_marker(note: str) -> bool:
-    return (note or "").strip().lower() == SENT_MARKER.lower()
+    """True if column H already contains the sent marker (exact or appended)."""
+    return SENT_MARKER.lower() in (note or "").lower()
+
+
+def append_sent_marker(note: str) -> str:
+    """Keep the original note and append the marker in the same cell."""
+    text = (note or "").rstrip()
+    if is_sent_marker(text):
+        return text
+    if not text:
+        return SENT_MARKER
+    return f"{text} {SENT_MARKER}"
 
 
 def is_applied_status(status: str) -> bool:
@@ -222,6 +233,30 @@ def row_to_json(row: RowTarget) -> dict:
     return d
 
 
+def cmd_mark_sent(args: argparse.Namespace) -> int:
+    """Read H for each row and append SENT_MARKER without replacing the note."""
+    row_nums = parse_row_spec(args.rows)
+    if not row_nums:
+        print("No rows parsed from --rows", file=sys.stderr)
+        return 1
+    from sheets_write import read_range, sheets_service, write_range
+    from sheet_config import get_spreadsheet_id, get_tab
+
+    service = sheets_service()
+    sid = get_spreadsheet_id()
+    tab = get_tab()
+    marked = []
+    for rn in row_nums:
+        values = read_range(service, sid, tab, f"H{rn}")
+        current = values[0][0] if values and values[0] else ""
+        updated = append_sent_marker(current)
+        if updated != current:
+            write_range(service, sid, tab, f"H{rn}", [[updated]])
+        marked.append({"row": rn, "before": current, "after": updated})
+    print(json.dumps({"marked": marked, "sent_marker": SENT_MARKER}, indent=2))
+    return 0
+
+
 def cmd_select(args: argparse.Namespace) -> int:
     row_nums = parse_row_spec(args.rows)
     if not row_nums:
@@ -269,13 +304,19 @@ def build_parser() -> argparse.ArgumentParser:
         default=MAX_SENDS_PER_DAY,
         help="Max connection sends this run",
     )
-    p.set_defaults(func=cmd_select)
+    p.add_argument(
+        "--mark-sent",
+        action="store_true",
+        help=f'Append "{SENT_MARKER}" to column H for --rows (do not replace the note)',
+    )
     return p
 
 
 def main() -> int:
     args = build_parser().parse_args()
-    return args.func(args)
+    if args.mark_sent:
+        return cmd_mark_sent(args)
+    return cmd_select(args)
 
 
 if __name__ == "__main__":
