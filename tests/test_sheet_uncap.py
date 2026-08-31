@@ -49,8 +49,13 @@ class FormulaPatternTests(unittest.TestCase):
         self.assertIn("A2:A)", SUMMARY_FORMULAS[0])
         self.assertNotIn("500", SUMMARY_FORMULAS[0])
         self.assertNotIn("989", SUMMARY_FORMULAS[0])
-        self.assertIn("Applied", SUMMARY_FORMULAS[1])
+        self.assertIn('COUNTIFS(A2:A,"<>",D2:D,"Applied")', SUMMARY_FORMULAS[1])
         self.assertIn("to apply", SUMMARY_FORMULAS[2])
+        self.assertNotIn("To Apply", SUMMARY_FORMULAS[2])
+
+    def test_countifs_requires_company_column(self):
+        for formula in SUMMARY_FORMULAS[1:]:
+            self.assertIn('A2:A,"<>"', formula, formula)
 
 
 class LinkedInVerifyTests(unittest.TestCase):

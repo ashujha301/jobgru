@@ -35,25 +35,31 @@ SUMMARY_LABELS = [
 
 SUMMARY_FORMULAS = [
     "=COUNTA(A2:A)",
-    '=COUNTIF(D2:D, "Applied")',
-    '=COUNTIF(D2:D, "to apply")',
-    '=COUNTIF(D2:D, "Interview")',
-    '=COUNTIF(D2:D, "Rejected")',
-    '=COUNTIF(D2:D, "Selected")',
-    '=COUNTIF(D2:D, "Assesment")',
-    '=COUNTIF(D2:D, "Contacted")',
+    '=COUNTIFS(A2:A,"<>",D2:D,"Applied")',
+    '=COUNTIFS(A2:A,"<>",D2:D,"to apply")',
+    '=COUNTIFS(A2:A,"<>",D2:D,"Interview")',
+    '=COUNTIFS(A2:A,"<>",D2:D,"Rejected")',
+    '=COUNTIFS(A2:A,"<>",D2:D,"Selected")',
+    '=COUNTIFS(A2:A,"<>",D2:D,"Assesment")',
+    '=COUNTIFS(A2:A,"<>",D2:D,"Contacted")',
 ]
 
-# Accept unbounded ranges and legacy capped ends (e.g. D2:D989).
+# Accept COUNTIFS (canonical), legacy COUNTIF, and capped ranges (e.g. D2:D989).
+_COUNTIFS = r'=COUNTIFS\(A2:A\d*,"<>",D2:D\d*,\s*"{status}"\)'
+_COUNTIF = r'=COUNTIF\(D2:D\d*,\s*"{status}"\)'
+
 SUMMARY_FORMULA_PATTERNS = [
     re.compile(r"^=COUNTA\(A2:A\d*\)$"),
-    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Applied"\)$'),
-    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"to apply"\)$', re.IGNORECASE),
-    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Interview"\)$'),
-    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Rejected"\)$'),
-    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Selected"\)$'),
-    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Assesment"\)$'),
-    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Contacted"\)$'),
+    re.compile("^" + _COUNTIFS.format(status="Applied") + "$|" + "^" + _COUNTIF.format(status="Applied") + "$"),
+    re.compile(
+        "^" + _COUNTIFS.format(status="to apply") + "$|^" + _COUNTIF.format(status="to apply") + "$",
+        re.IGNORECASE,
+    ),
+    re.compile("^" + _COUNTIFS.format(status="Interview") + "$|" + "^" + _COUNTIF.format(status="Interview") + "$"),
+    re.compile("^" + _COUNTIFS.format(status="Rejected") + "$|" + "^" + _COUNTIF.format(status="Rejected") + "$"),
+    re.compile("^" + _COUNTIFS.format(status="Selected") + "$|" + "^" + _COUNTIF.format(status="Selected") + "$"),
+    re.compile("^" + _COUNTIFS.format(status="Assesment") + "$|" + "^" + _COUNTIF.format(status="Assesment") + "$"),
+    re.compile("^" + _COUNTIFS.format(status="Contacted") + "$|" + "^" + _COUNTIF.format(status="Contacted") + "$"),
 ]
 
 SUMMARY_RANGE_END = 1 + len(SUMMARY_FORMULAS)  # M2:M9 when 8 formulas
@@ -65,7 +71,7 @@ STATUS_DROPDOWN_VALUES = [
     "Selected",
     "Assesment",
     "Contacted",
-    "To Apply",
+    "to apply",
 ]
 
 
@@ -144,6 +150,42 @@ def restore_summary_formulas(service, spreadsheet_id: str, tab: str) -> None:
         sanitize=False,
     )
     apply_summary_formatting(service, spreadsheet_id, tab)
+    restore_status_dropdown(service, spreadsheet_id, tab)
+
+
+def restore_status_dropdown(service, spreadsheet_id: str, tab: str) -> None:
+    """Apply Status dropdown (column D) for all job rows."""
+    from sheets_write import get_sheet_id
+
+    sheet_id = get_sheet_id(service, spreadsheet_id, tab)
+    service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={
+            "requests": [
+                {
+                    "setDataValidation": {
+                        "range": {
+                            "sheetId": sheet_id,
+                            "startRowIndex": 1,
+                            "endRowIndex": 5000,
+                            "startColumnIndex": 3,
+                            "endColumnIndex": 4,
+                        },
+                        "rule": {
+                            "condition": {
+                                "type": "ONE_OF_LIST",
+                                "values": [
+                                    {"userEnteredValue": v} for v in STATUS_DROPDOWN_VALUES
+                                ],
+                            },
+                            "showCustomUi": True,
+                            "strict": True,
+                        },
+                    }
+                }
+            ]
+        },
+    ).execute()
 
 
 def apply_summary_formatting(service, spreadsheet_id: str, tab: str) -> None:

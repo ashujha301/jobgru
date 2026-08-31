@@ -189,17 +189,19 @@ Tab must stay **`Job Applications`**. Spreadsheet title can be anything.
 | Row | Label (L) | Formula (M) |
 | --- | --- | --- |
 | M2 | Total jobs | `=COUNTA(A2:A)` |
-| M3 | Total Applied | `=COUNTIF(D2:D, "Applied")` |
-| M4 | Total to Apply | `=COUNTIF(D2:D, "to apply")` |
-| M5 | Interviews | `=COUNTIF(D2:D, "Interview")` |
-| M6 | Rejections | `=COUNTIF(D2:D, "Rejected")` |
-| M7 | Total Selected | `=COUNTIF(D2:D, "Selected")` |
-| M8 | Total Assesments | `=COUNTIF(D2:D, "Assesment")` |
-| M9 | Total Contacted | `=COUNTIF(D2:D, "Contacted")` |
+| M3 | Total Applied | `=COUNTIFS(A2:A,"<>",D2:D,"Applied")` |
+| M4 | Total to Apply | `=COUNTIFS(A2:A,"<>",D2:D,"to apply")` |
+| M5 | Interviews | `=COUNTIFS(A2:A,"<>",D2:D,"Interview")` |
+| M6 | Rejections | `=COUNTIFS(A2:A,"<>",D2:D,"Rejected")` |
+| M7 | Total Selected | `=COUNTIFS(A2:A,"<>",D2:D,"Selected")` |
+| M8 | Total Assesments | `=COUNTIFS(A2:A,"<>",D2:D,"Assesment")` |
+| M9 | Total Contacted | `=COUNTIFS(A2:A,"<>",D2:D,"Contacted")` |
 
-**Status dropdown (column D):** Applied, Rejected, Interview, Selected, Assesment, Contacted, To Apply.
+Status counts use `COUNTIFS` with `A2:A,"<>"` so orphan Status cells (no company name) are ignored.
 
-Jobgru writes new rows with Status `to apply` (lowercase). `COUNTIF` is case-insensitive, so Total to Apply matches both `to apply` and `To Apply`.
+**Status dropdown (column D):** Applied, Rejected, Interview, Selected, Assesment, Contacted, to apply.
+
+Jobgru writes new rows with Status `to apply`. `COUNTIFS` text match is case-insensitive, so dropdown `to apply` and pipeline `to apply` both count.
 
 ---
 
