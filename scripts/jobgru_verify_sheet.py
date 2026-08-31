@@ -96,7 +96,7 @@ def verify_sheet() -> tuple[bool, str, str]:
         if not ok:
             return (
                 False,
-                "Summary formulas (M2:M7) do not match: " + "; ".join(issues[:3]),
+                "Summary formulas (L2:M9) do not match: " + "; ".join(issues[:3]),
                 "Recopy the Jobgru template",
             )
     except Exception as exc:

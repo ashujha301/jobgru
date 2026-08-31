@@ -505,7 +505,7 @@ Launch **LeadGru** and **ATSScore in parallel**:
 
 1. Read [`.cursor/skills/leadgru/SKILL.md`](../leadgru/SKILL.md).
 2. Pass `start_row`, `end_row`; process rows in range where Status is `to apply` and Leads (G) empty.
-3. **Sleep 40** after Phase 1 LinkedIn work, then LinkedIn people search (LeadGru [pacing](#linkedin-pacing-mandatory--never-skip)) → write G/H per row.
+3. **Sleep 40** after Phase 1 LinkedIn work, then LinkedIn people search (LeadGru [pacing](#linkedin-pacing-mandatory--never-skip)) → write **G only** per row (pipeline).
 
 ### ATSScore (Phase 2b)
 
@@ -519,12 +519,15 @@ Launch **LeadGru** and **ATSScore in parallel**:
 
 4. Backfills **all** `to apply` rows with empty I, not only new rows.
 
-### After both complete
+### After both complete — fill Add note (H) from ATS winner
 
 ```bash
+.venv/bin/python scripts/resume_catalog.py fill-notes --rows "${START_ROW}-${END_ROW}"
 .venv/bin/python scripts/sheets_write.py format-layout
 .venv/bin/python scripts/sheets_write.py read --range "A${START_ROW}:J${END_ROW}"
 ```
+
+`fill-notes` reads column J `Best match: {label}` (or column I scores), matches label to column O catalog, and writes H with the correct Bitly or resume name. Does not overwrite existing H.
 
 Update run JSON:
 

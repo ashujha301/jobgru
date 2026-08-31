@@ -27,9 +27,28 @@ To override a label (or stable `id`), edit `manifest.json` once — your entry i
 ```json
 {
   "resumes": [
-    { "id": "main", "file": "Ayush_Jha_Resume.pdf", "label": "AI/ML SWE" }
+    {
+      "id": "backend",
+      "file": "Ayush_BE.pdf",
+      "label": "backend",
+      "share_url": "https://bit.ly/aj_be"
+    }
   ]
 }
+```
+
+Optional `share_url` (Bitly or any public link) is used in Add note Message when that resume wins ATS scoring. Sync to column O:
+
+```bash
+.venv/bin/python scripts/resume_catalog.py sync-sheet
+```
+
+Column O format (one row per resume): `{share_url or filename} , {role}`
+
+Add resumes via:
+
+```bash
+.venv/bin/python scripts/resume_catalog.py add --pdf path/to/resume.pdf --url https://bit.ly/xxx --label backend
 ```
 
 Refresh manifest without scoring:

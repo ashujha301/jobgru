@@ -51,6 +51,7 @@ class ResumeEntry:
     label: str
     path: Path
     text: str = ""
+    share_url: str = ""
 
 
 @dataclass
@@ -115,6 +116,8 @@ def sync_manifest_from_pdfs(*, write: bool = True) -> tuple[list[dict], bool]:
             entry = dict(by_file[filename])
             entry.setdefault("id", filename_to_id(pdf_path.stem))
             entry.setdefault("label", filename_to_label(pdf_path.stem))
+            if by_file[filename].get("share_url"):
+                entry["share_url"] = by_file[filename]["share_url"]
         else:
             entry = {
                 "id": filename_to_id(pdf_path.stem),
@@ -159,6 +162,7 @@ def load_resumes(resume_ids: list[str] | None = None, *, sync_manifest: bool = T
                 id=rid,
                 label=item.get("label", rid),
                 path=pdf_path,
+                share_url=(item.get("share_url") or "").strip(),
             )
         )
     return entries
@@ -425,6 +429,7 @@ def cmd_score(args: argparse.Namespace) -> int:
     scored_rows: list[int] = []
     no_data_rows: list[int] = []
     writes: list[tuple[int, str, str]] = []
+    best_matches: list[dict] = []
 
     for job in targets:
         if not job.skills:
@@ -438,6 +443,15 @@ def cmd_score(args: argparse.Namespace) -> int:
         sug_cell = format_suggestions(best)
         scored_rows.append(job.row_num)
         writes.append((job.row_num, ats_cell, sug_cell))
+        best_resume = next((r for r in resumes if r.label == best.label), None)
+        best_matches.append(
+            {
+                "row": job.row_num,
+                "best_label": best.label,
+                "best_score": best.score,
+                "share_url": best_resume.share_url if best_resume else "",
+            }
+        )
 
     if not args.dry_run:
         for row_num, ats_val, sug_val in writes:
@@ -454,6 +468,7 @@ def cmd_score(args: argparse.Namespace) -> int:
         "atsscore_rows_scored": scored_rows,
         "atsscore_skipped_no_data": no_data_rows,
         "resumes_used": [r.label for r in resumes],
+        "best_matches": best_matches,
         "dry_run": args.dry_run,
     }
     print(json.dumps(summary, indent=2))

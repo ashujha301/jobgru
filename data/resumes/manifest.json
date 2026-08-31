@@ -4,6 +4,36 @@
       "id": "ayush-jha-resume",
       "file": "Ayush_Jha_Resume.pdf",
       "label": "Ayush Jha Resume"
+    },
+    {
+      "id": "ai",
+      "file": "ai.pdf",
+      "label": "AI",
+      "share_url": "https://bit.ly/aj_ai"
+    },
+    {
+      "id": "backend",
+      "file": "backend.pdf",
+      "label": "backend",
+      "share_url": "https://bit.ly/aj_be"
+    },
+    {
+      "id": "full-stack",
+      "file": "full-stack.pdf",
+      "label": "Full Stack",
+      "share_url": "https://bit.ly/aj_fs"
+    },
+    {
+      "id": "machine-learning",
+      "file": "machine-learning.pdf",
+      "label": "Machine learning",
+      "share_url": "https://bit.ly/aj_ml"
+    },
+    {
+      "id": "swe",
+      "file": "swe.pdf",
+      "label": "SWE",
+      "share_url": "https://bit.ly/aj_se"
     }
   ]
 }

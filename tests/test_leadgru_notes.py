@@ -88,5 +88,17 @@ class ClampTests(unittest.TestCase):
         self.assertTrue(out.endswith("Thanks"))
 
 
+    def test_resolved_bitly_under_cap(self):
+        note = fill_add_note(
+            DEFAULT_TEMPLATES[0],
+            position="Backend AI Engineer",
+            company="Acme",
+            link="https://bit.ly/aj_be",
+        )
+        self.assertLessEqual(len(note), MAX_FILLED_NOTE_CHARS)
+        self.assertIn("https://bit.ly/aj_be", note)
+        self.assertTrue(note.endswith("Thanks"))
+
+
 if __name__ == "__main__":
     unittest.main()

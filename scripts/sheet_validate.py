@@ -21,24 +21,42 @@ EXPECTED_HEADERS_A_J = [
     "Suggestions on Resume",
 ]
 
+# Column L labels + column M formulas (Summary / Count). Unbounded ranges.
+SUMMARY_LABELS = [
+    "Total jobs",
+    "Total Applied",
+    "Total to Apply",
+    "Interviews",
+    "Rejections",
+    "Total Selected",
+    "Total Assesments",
+    "Total Contacted",
+]
+
 SUMMARY_FORMULAS = [
-    "=COUNTA(D2:D)",
+    "=COUNTA(A2:A)",
+    '=COUNTIF(D2:D, "Applied")',
+    '=COUNTIF(D2:D, "to apply")',
     '=COUNTIF(D2:D, "Interview")',
     '=COUNTIF(D2:D, "Rejected")',
     '=COUNTIF(D2:D, "Selected")',
-    '=COUNTIF(D3:D, "Assesment")',
-    '=COUNTIF(D4:D, "Contacted")',
+    '=COUNTIF(D2:D, "Assesment")',
+    '=COUNTIF(D2:D, "Contacted")',
 ]
 
-# Accept unbounded D2:D and legacy D2:D989 (deletes used to shrink the end row).
+# Accept unbounded ranges and legacy capped ends (e.g. D2:D989).
 SUMMARY_FORMULA_PATTERNS = [
-    re.compile(r"^=COUNTA\(D2:D\d*\)$"),
+    re.compile(r"^=COUNTA\(A2:A\d*\)$"),
+    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Applied"\)$'),
+    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"to apply"\)$', re.IGNORECASE),
     re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Interview"\)$'),
     re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Rejected"\)$'),
     re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Selected"\)$'),
-    re.compile(r'^=COUNTIF\(D3:D\d*,\s*"Assesment"\)$'),
-    re.compile(r'^=COUNTIF\(D4:D\d*,\s*"Contacted"\)$'),
+    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Assesment"\)$'),
+    re.compile(r'^=COUNTIF\(D2:D\d*,\s*"Contacted"\)$'),
 ]
+
+SUMMARY_RANGE_END = 1 + len(SUMMARY_FORMULAS)  # M2:M9 when 8 formulas
 
 STATUS_DROPDOWN_VALUES = [
     "Applied",
@@ -74,39 +92,135 @@ def validate_headers(service, spreadsheet_id: str, tab: str) -> tuple[bool, list
 def validate_summary_formulas(service, spreadsheet_id: str, tab: str) -> tuple[bool, list[str]]:
     quoted_tab = f"'{tab}'" if " " in tab else tab
     issues: list[str] = []
+    end = SUMMARY_RANGE_END
     resp = (
         service.spreadsheets()
         .values()
         .get(
             spreadsheetId=spreadsheet_id,
-            range=f"{quoted_tab}!M2:M7",
+            range=f"{quoted_tab}!L2:M{end}",
             valueRenderOption="FORMULA",
         )
         .execute()
     )
-    got = [row[0] if row else "" for row in resp.get("values", [])]
-    while len(got) < len(SUMMARY_FORMULA_PATTERNS):
-        got.append("")
-    for i, (pattern, actual) in enumerate(zip(SUMMARY_FORMULA_PATTERNS, got, strict=False)):
-        if not pattern.match(str(actual)):
+    rows = resp.get("values", [])
+    while len(rows) < len(SUMMARY_FORMULA_PATTERNS):
+        rows.append([])
+    for i, pattern in enumerate(SUMMARY_FORMULA_PATTERNS):
+        row = rows[i] if i < len(rows) else []
+        label = row[0] if row else ""
+        formula = row[1] if len(row) > 1 else ""
+        expected_label = SUMMARY_LABELS[i]
+        if str(label).strip() != expected_label:
+            issues.append(f"L{i + 2}: expected {expected_label!r}, got {label!r}")
+        if not pattern.match(str(formula)):
             issues.append(
-                f"M{i + 2}: expected {SUMMARY_FORMULAS[i]!r} (or legacy D2:D989), got {actual!r}"
+                f"M{i + 2}: expected {SUMMARY_FORMULAS[i]!r} (or legacy capped range), got {formula!r}"
             )
     return not issues, issues
 
 
 def restore_summary_formulas(service, spreadsheet_id: str, tab: str) -> None:
-    """Rewrite M2:M7 with canonical formulas (row deletes shrink the ranges)."""
+    """Rewrite L2:M{n} labels + formulas and apply Summary block colors/borders."""
     from sheets_write import write_range
 
+    end = SUMMARY_RANGE_END
+    values = [[label, formula] for label, formula in zip(SUMMARY_LABELS, SUMMARY_FORMULAS, strict=True)]
     write_range(
         service,
         spreadsheet_id,
         tab,
-        "M2:M7",
-        [[f] for f in SUMMARY_FORMULAS],
+        f"L2:M{end}",
+        values,
         sanitize=False,
     )
+    # Ensure header labels exist (do not wipe custom header text if already Summary/Count)
+    write_range(
+        service,
+        spreadsheet_id,
+        tab,
+        "L1:M1",
+        [["Summary", "Count"]],
+        sanitize=False,
+    )
+    apply_summary_formatting(service, spreadsheet_id, tab)
+
+
+def apply_summary_formatting(service, spreadsheet_id: str, tab: str) -> None:
+    """Match Summary block styling: gray header, light body, medium borders, centered."""
+    from sheets_write import get_sheet_id
+
+    sheet_id = get_sheet_id(service, spreadsheet_id, tab)
+    end = SUMMARY_RANGE_END  # 1-based inclusive row (e.g. 9)
+
+    header_bg = {"red": 0.8509804, "green": 0.8509804, "blue": 0.8509804}
+    body_bg = {"red": 0.9372549, "green": 0.9372549, "blue": 0.9372549}
+    header_fg = {"red": 0.2627451, "green": 0.2627451, "blue": 0.2627451}
+    medium = {
+        "style": "SOLID_MEDIUM",
+        "width": 2,
+        "color": {"red": 0, "green": 0, "blue": 0},
+    }
+    borders = {"top": medium, "bottom": medium, "left": medium, "right": medium}
+
+    def grid_range(start_row: int, end_row_exclusive: int) -> dict:
+        # Sheets API uses 0-based startRowIndex, exclusive endRowIndex
+        return {
+            "sheetId": sheet_id,
+            "startRowIndex": start_row - 1,
+            "endRowIndex": end_row_exclusive,
+            "startColumnIndex": 11,  # L
+            "endColumnIndex": 13,  # M exclusive → through M
+        }
+
+    requests = [
+        {
+            "repeatCell": {
+                "range": grid_range(1, 1),
+                "cell": {
+                    "userEnteredFormat": {
+                        "backgroundColor": header_bg,
+                        "horizontalAlignment": "CENTER",
+                        "verticalAlignment": "MIDDLE",
+                        "textFormat": {"bold": True, "foregroundColor": header_fg},
+                        "borders": borders,
+                    }
+                },
+                "fields": (
+                    "userEnteredFormat.backgroundColor,"
+                    "userEnteredFormat.horizontalAlignment,"
+                    "userEnteredFormat.verticalAlignment,"
+                    "userEnteredFormat.textFormat,"
+                    "userEnteredFormat.borders"
+                ),
+            }
+        },
+        {
+            "repeatCell": {
+                "range": grid_range(2, end),
+                "cell": {
+                    "userEnteredFormat": {
+                        "backgroundColor": body_bg,
+                        "horizontalAlignment": "CENTER",
+                        "verticalAlignment": "MIDDLE",
+                        "textFormat": {"bold": False},
+                        "borders": borders,
+                    }
+                },
+                "fields": (
+                    "userEnteredFormat.backgroundColor,"
+                    "userEnteredFormat.horizontalAlignment,"
+                    "userEnteredFormat.verticalAlignment,"
+                    "userEnteredFormat.textFormat,"
+                    "userEnteredFormat.borders"
+                ),
+            }
+        },
+    ]
+    service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={"requests": requests},
+    ).execute()
 
 
 def validate_status_dropdown(service, spreadsheet_id: str, tab: str) -> tuple[bool, list[str]]:

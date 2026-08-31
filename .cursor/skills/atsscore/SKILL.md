@@ -159,6 +159,8 @@ Best match: Backend SWE (78) | Add keywords: Kubernetes, GraphQL | Title fit: st
    - `resumes_used`: labels from manifest
 6. Do **not** run `format-layout` alone — Jobgru coordinator runs it after both Phase 2 tracks finish.
 
+After ATS completes, the Jobgru coordinator runs `resume_catalog.py fill-notes` so Add note Message (H) uses the **highest-scoring resume’s** share URL from column O / manifest (see [leadgru skill](../leadgru/SKILL.md)).
+
 ## Scoring inputs (sheet only)
 
 Jobgru must append Skills to column F during Phase 1 verify:

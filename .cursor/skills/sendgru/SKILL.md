@@ -36,6 +36,41 @@ LeadGru is unchanged: it still finds **5 people + company people page** on `to a
 - Rows must have Leads (G) filled (usually from LeadGru) and Add note Message (H) from templates
 - User must have set Status to **applied** after applying to the job
 
+## Browser fallback ladder (mandatory — do not stop at MCP error)
+
+SendGru **requires a live browser**. If one path fails, try the next **before** reporting blocked.
+
+| Priority | Method | When |
+| --- | --- | --- |
+| 1 | **Cursor Browser MCP** (`cursor-ide-browser`) | Default in Cursor — `browser_navigate`, `browser_snapshot`, `browser_click`, … |
+| 2 | **Playwright MCP** | If registered — discover via MCP tool list (`playwright`, `browser_navigate`, …) |
+| 3 | **Playwright CLI (no MCP)** | **Always try this if MCP is disconnected** — works in Cursor without reload |
+
+### Fallback 3 — Playwright CLI (recommended when MCP fails)
+
+```bash
+.venv/bin/python scripts/sendgru_select.py --rows "64-70" --apply-daily-cap
+.venv/bin/python scripts/sendgru_playwright.py --rows "64-70" --apply-daily-cap
+```
+
+Uses `~/.jobgru/browser-profile` (same cookies as `jobgru mcp login`). **One-time login:**
+
+```bash
+jobgru mcp login
+```
+
+Sign into LinkedIn in the opened browser, press ENTER in terminal.
+
+**Do not** tell the user to reload Cursor as the only fix — run the Playwright CLI first. Reload MCP only if CLI also fails or user prefers MCP pacing/UI.
+
+Dry-run (select only, no browser):
+
+```bash
+.venv/bin/python scripts/sendgru_playwright.py --rows "64-70" --apply-daily-cap --dry-run
+```
+
+---
+
 ## Coordinator workflow
 
 ### 1 — Parse rows and load sheet
@@ -69,7 +104,10 @@ Follow runbook steps in order:
 1. Navigate to `/in/` URL
 2. Snapshot — if page shows stop phrases (see runbook `stop_phrases`), **stop session**
 3. If **Message** only (already connected) or **Pending** — skip person, continue
-4. Click **Connect** (fallback: **More** → **Connect**)
+4. **Connect** (fixed two-path flow — do not guess):
+   - **Path A:** Blue **Connect** in profile header → click it
+   - **Path B:** No Connect but **Follow** shown → **More** → **Connect** in dropdown
+   - Modal opens with **Add a note** and **Send without a note**
 5. Click **Add a note** (if missing, skip person — do not use “Send without a note”)
 6. Paste **exact** column H text (`browser_fill` or type)
 7. Click **Send** / **Send invitation**

@@ -374,9 +374,10 @@ def check_sheet_formulas(report: Report) -> None:
             CheckResult(
                 id="sheet_formulas",
                 status="pass" if ok else "fail",
-                message="Summary formulas M2:M7 OK" if ok else "; ".join(issues),
-                fix="Recopy the Jobgru template",
-                manual=True,
+                message="Summary formulas L2:M9 OK" if ok else "; ".join(issues),
+                fix="Run: .venv/bin/python scripts/sheets_write.py restore-summary",
+                fix_command=f"{VENV_PYTHON} scripts/sheets_write.py restore-summary",
+                manual=False,
             )
         )
     except Exception as exc:

@@ -98,7 +98,7 @@ Every prompt accepts **skip** — you can finish later with `jobgru setup` / `jo
 cp your-resume.pdf ~/.jobgru/data/resumes/
 ```
 
-Or in chat: `Jobgru add resume` (attach PDF).
+Or in chat: `Jobgru add resume` (attach PDF, optional Bitly + role). Multiple resumes map to column **O** (`share_url , role`); add notes use the **highest ATS** resume’s link.
 
 ### After install — first job search
 

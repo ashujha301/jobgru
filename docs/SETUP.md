@@ -86,7 +86,7 @@ Exit code `0` = ready; `1` = fix failures.
 | `config` | `config/sheet.json` with real spreadsheet ID |
 | `sheet_tab` | Tab `Job Applications` exists |
 | `sheet_headers` | Row 1 headers A1:J1 match template |
-| `sheet_formulas` | Summary COUNT formulas M2:M7 |
+| `sheet_formulas` | Summary COUNT formulas L2:M9 |
 | `sheet_dropdown` | Status dropdown on D2 |
 | `sheet_auth` | Sheets API read works |
 | `sheet_write` | Sheets API write test |
@@ -184,20 +184,22 @@ File → Make a copy copies dropdowns, colors, column widths, and formulas.
 
 Tab must stay **`Job Applications`**. Spreadsheet title can be anything.
 
-### Summary formulas (column M)
+### Summary formulas (columns L–M)
 
-| Row | Label | Formula |
+| Row | Label (L) | Formula (M) |
 | --- | --- | --- |
-| M2 | Total Applied | `=COUNTA(D2:D)` |
-| M3 | Interviews | `=COUNTIF(D2:D, "Interview")` |
-| M4 | Rejections | `=COUNTIF(D2:D, "Rejected")` |
-| M5 | Total Selected | `=COUNTIF(D2:D, "Selected")` |
-| M6 | Total Assesments | `=COUNTIF(D3:D, "Assesment")` |
-| M7 | Total Contacted | `=COUNTIF(D4:D, "Contacted")` |
+| M2 | Total jobs | `=COUNTA(A2:A)` |
+| M3 | Total Applied | `=COUNTIF(D2:D, "Applied")` |
+| M4 | Total to Apply | `=COUNTIF(D2:D, "to apply")` |
+| M5 | Interviews | `=COUNTIF(D2:D, "Interview")` |
+| M6 | Rejections | `=COUNTIF(D2:D, "Rejected")` |
+| M7 | Total Selected | `=COUNTIF(D2:D, "Selected")` |
+| M8 | Total Assesments | `=COUNTIF(D2:D, "Assesment")` |
+| M9 | Total Contacted | `=COUNTIF(D2:D, "Contacted")` |
 
 **Status dropdown (column D):** Applied, Rejected, Interview, Selected, Assesment, Contacted, To Apply.
 
-Jobgru writes new rows with Status `to apply` (lowercase). Change to `To Apply` from the dropdown after applying.
+Jobgru writes new rows with Status `to apply` (lowercase). `COUNTIF` is case-insensitive, so Total to Apply matches both `to apply` and `To Apply`.
 
 ---
 

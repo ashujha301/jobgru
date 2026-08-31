@@ -224,9 +224,53 @@ Same as setup steps 2–3–5 when user provides a new sheet URL. Do not recreat
 
 ## Add-resume mode
 
-1. Save uploaded PDF to `data/resumes/`
-2. `.venv/bin/python scripts/ats_score.py sync`
-3. Run check (resume should pass)
+Use `scripts/resume_catalog.py` for all resume adds (manifest + column O catalog).
+
+### Scenario 1 — PDF only
+
+```bash
+.venv/bin/python scripts/resume_catalog.py add --pdf data/resumes/Ayush_BE.pdf --label backend
+```
+
+Stores `Ayush_BE.pdf , backend` in column O (Latest Resume). Add note uses filename when no share URL.
+
+### Scenario 2 — PDF + short link (Bitly, etc.)
+
+```bash
+.venv/bin/python scripts/resume_catalog.py add \
+  --pdf data/resumes/Ayush_BE.pdf \
+  --url https://bit.ly/aj_be \
+  --label backend
+```
+
+Stores `https://bit.ly/aj_be , backend` in column O.
+
+### Scenario 3 — Link only (try PDF download)
+
+```bash
+.venv/bin/python scripts/resume_catalog.py add --url https://bit.ly/aj_be --label backend
+```
+
+Follows redirects; if response is a PDF, saves to `data/resumes/` and scores it. If download fails, still catalogs the link for add notes (no ATS until a PDF exists).
+
+### Bulk add (chat)
+
+User can paste pairs:
+
+```text
+Jobgru add resume
+Ayush_BE.pdf https://bit.ly/aj_be backend
+Ayush_AI.pdf https://bit.ly/aj_ai AI
+```
+
+Run one `resume_catalog.py add` per line. Then:
+
+```bash
+.venv/bin/python scripts/ats_score.py sync
+.venv/bin/python scripts/jobgru_check.py --json
+```
+
+Column **O2:O{n}** format: `{share_url or filename} , {role}` — one resume per row.
 
 ---
 

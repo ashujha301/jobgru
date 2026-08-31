@@ -111,6 +111,10 @@ def main() -> int:
     spreadsheet_id, url = copy_spreadsheet(args.source_id, title=args.title)
     clear_job_data(service, spreadsheet_id, args.tab)
     sanitize_personal_fields(service, spreadsheet_id, args.tab)
+    # Ensure Summary L/M labels, formulas, colors, and borders match the canonical layout
+    from sheet_validate import restore_summary_formulas
+
+    restore_summary_formulas(service, spreadsheet_id, args.tab)
     verification = verify_template(
         service, spreadsheet_id, args.tab, require_empty_jobs=True
     )

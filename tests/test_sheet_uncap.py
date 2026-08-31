@@ -41,13 +41,16 @@ class FormulaPatternTests(unittest.TestCase):
             self.assertTrue(pattern.match(formula), formula)
 
     def test_legacy_d989_still_valid(self):
-        self.assertTrue(SUMMARY_FORMULA_PATTERNS[0].match("=COUNTA(D2:D989)"))
-        self.assertTrue(SUMMARY_FORMULA_PATTERNS[1].match('=COUNTIF(D2:D989, "Interview")'))
+        self.assertTrue(SUMMARY_FORMULA_PATTERNS[0].match("=COUNTA(A2:A989)"))
+        self.assertTrue(SUMMARY_FORMULA_PATTERNS[1].match('=COUNTIF(D2:D989, "Applied")'))
+        self.assertTrue(SUMMARY_FORMULA_PATTERNS[2].match('=COUNTIF(D2:D989, "to apply")'))
 
     def test_rows_past_500_are_in_unbounded_formula(self):
-        self.assertIn("D2:D)", SUMMARY_FORMULAS[0])
+        self.assertIn("A2:A)", SUMMARY_FORMULAS[0])
         self.assertNotIn("500", SUMMARY_FORMULAS[0])
         self.assertNotIn("989", SUMMARY_FORMULAS[0])
+        self.assertIn("Applied", SUMMARY_FORMULAS[1])
+        self.assertIn("to apply", SUMMARY_FORMULAS[2])
 
 
 class LinkedInVerifyTests(unittest.TestCase):

@@ -664,6 +664,17 @@ def cmd_first_empty(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_restore_summary(args: argparse.Namespace) -> int:
+    service = sheets_service()
+    from sheet_validate import restore_summary_formulas, validate_summary_formulas
+
+    restore_summary_formulas(service, args.spreadsheet_id, args.tab)
+    ok, issues = validate_summary_formulas(service, args.spreadsheet_id, args.tab)
+    result = {"summary_formulas": "restored" if ok else "restored_with_issues", "ok": ok, "issues": issues}
+    print(json.dumps(result, indent=2))
+    return 0 if ok else 1
+
+
 def cmd_format_layout(args: argparse.Namespace) -> int:
     service = sheets_service()
     from sheet_validate import restore_summary_formulas
@@ -694,7 +705,7 @@ def cmd_delete_rows(args: argparse.Namespace) -> int:
         return 0
 
     delete_sheet_rows(service, args.spreadsheet_id, args.tab, rows)
-    # Row deletion shrinks M2:M7 formula ranges (e.g. D989 → D987) — restore them.
+    # Row deletion shrinks L2:M9 formula ranges — restore them.
     from sheet_validate import restore_summary_formulas
 
     restore_summary_formulas(service, args.spreadsheet_id, args.tab)
@@ -806,6 +817,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Apply wrap through this row (0 = full current sheet grid, no cap)",
     )
     fmt_p.set_defaults(func=cmd_format_layout)
+
+    sum_p = sub.add_parser(
+        "restore-summary",
+        help="Fix Summary labels + COUNT formulas in L2:M9 (colors/borders)",
+    )
+    sum_p.set_defaults(func=cmd_restore_summary)
 
     del_p = sub.add_parser("delete-rows", help="Delete data rows and compact the sheet")
     del_p.add_argument("--rows", required=True, help="Row spec: 42 | 42,43 | 42-44 | 42,44-46")

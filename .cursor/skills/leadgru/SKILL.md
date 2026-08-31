@@ -86,7 +86,7 @@ Read **`config/sheet.json`** at the start of every run (copy from `config/sheet.
 | Sheet URL | `sheet_url` in `config/sheet.json` |
 | Spreadsheet ID | `spreadsheet_id` in `config/sheet.json` |
 | Tab name | `tab` in `config/sheet.json` |
-| Resume link default | `resume_link` in config, or cell **O2** on the sheet |
+| Resume link default | Column **O** catalog (O2:O{n}) + `resume_link` in config; see [Add note Message](#add-note-message-column-h) |
 | Write script | `scripts/sheets_write.py` |
 | Python | `.venv/bin/python` |
 | Run summaries | Combined in `data/runs/<YYYY-MM-DD-HHMM>.json` (pipeline) or `data/runs/leadgru-<YYYY-MM-DD-HHMM>.json` (standalone) |
@@ -216,6 +216,27 @@ Rules:
 
 ## Add note Message (column H)
 
+**Pipeline mode:** LeadGru writes **Leads (G) only**. Do **not** fill H during LinkedIn search. The Jobgru coordinator fills H **after ATSScore** using the highest-ATS resume link (see below).
+
+**Standalone mode:** If column I/J already has ATS scores, fill H immediately using resolved link. Otherwise run ATS first, then `resume_catalog.py fill-notes`.
+
+### Latest Resume catalog (column O)
+
+Rows **O2:O{n}** — one resume per row:
+
+```text
+https://bit.ly/aj_be , backend
+Ayush_SWE.pdf , SWE
+```
+
+Left = share URL (preferred) or filename; right = role label (must match ATS manifest `label`).
+
+Read catalog:
+
+```bash
+.venv/bin/python scripts/sheets_write.py read --range "O1:O10"
+```
+
 ### Read templates
 
 Templates live in column **Q**, rows **Q2–Q7** (header in Q1):
@@ -234,18 +255,27 @@ Substitute:
 | --- | --- |
 | `{Position}` | Column B (Position) — use full title as written |
 | `{Company}` | Column A (Company Name) — use full name as written |
-| `{Link}` | Resume URL from cell **O2**, or `resume_link` in `config/sheet.json` |
+| `{Link}` | **Highest ATS resume** — resolve via `resume_catalog.py resolve --row R` (matches column J `Best match:` label to column O catalog). Fallback: single O2 entry, then `resume_link` in config |
 
 Always use greeting `Hi,` — never `Hi {Name},` and never a lead name. Do not append your own name (they see it on your LinkedIn profile). End with `Thanks` (no `!`).
 
-**Length:** filled H must be **≤ 200 characters**. Do not write the raw template. Fill via:
+**Length:** filled H must be **≤ 200 characters**. Do not write the raw template.
+
+**Pipeline — fill H after ATS (coordinator or standalone backfill):**
 
 ```bash
+.venv/bin/python scripts/resume_catalog.py fill-notes --rows "${START_ROW}-${END_ROW}"
+```
+
+**Manual single row:**
+
+```bash
+LINK=$(.venv/bin/python scripts/resume_catalog.py resolve --row R)
 .venv/bin/python scripts/leadgru_notes.py fill \
   --template "TEMPLATE_FROM_Q" \
   --position "COLUMN_B" \
   --company "COLUMN_A" \
-  --link "O2_OR_CONFIG"
+  --link "$LINK"
 ```
 
 The script substitutes `{Position}` `{Company}` `{Link}`, and clamps to 200 while keeping the resume short link and `Thanks`.
@@ -424,7 +454,23 @@ gcloud auth login --enable-gdrive-access --update-adc
 
 From verified LinkedIn results + template rotation (see [Add note Message](#add-note-message-column-h)).
 
-### Step 2 — Write G and H in one call
+### Step 2 — Write G only (pipeline) or G+H (standalone with ATS done)
+
+**Pipeline mode** — write Leads only; H filled later by coordinator:
+
+```bash
+.venv/bin/python scripts/sheets_write.py write \
+  --range "G${R}" \
+  --value "<leads text with \n newlines>"
+```
+
+**Standalone mode** (ATS scores already in I/J):
+
+```bash
+.venv/bin/python scripts/resume_catalog.py fill-notes --rows "${R}"
+```
+
+Or write G and H together when note is ready:
 
 ```bash
 .venv/bin/python scripts/sheets_write.py write \

@@ -14,14 +14,30 @@ Use sendgru skill. Sheets API for reads/writes only.
 Step 1 — Select targets:
   .venv/bin/python scripts/sendgru_select.py --rows "4-12" --apply-daily-cap
 
-Step 2 — For each actionable row (Status applied, H does not already contain "Sent add note"):
-  - Send column H note to first 2 /in/ URLs in column G
-  - Follow data/linkedin-runbooks/connect-add-note.json
-  - 60-90s sleep before each profile navigate (after the first)
-  - Stop on CAPTCHA / weekly invitation limit
+Step 2 — Send (pick first working browser path):
 
-Step 3 — After row completes (1-2 successful sends), append (do not replace) H:
-  .venv/bin/python scripts/sendgru_select.py --rows "{ROW}" --mark-sent
+**A. Cursor Browser MCP** — follow `data/linkedin-runbooks/connect-add-note.json`
+
+**Profile Connect (fixed — do not guess):**
+
+1. **Path A:** Blue **Connect** button in the profile header → click it.
+2. **Path B:** No Connect, but **Follow** is shown → click **More** → **Connect** in the dropdown list.
+3. Modal opens with **Add a note** and **Send without a note** — always use **Add a note** (never send without a note).
+4. Paste exact column H text → **Send invitation**.
+
+**B. If MCP disconnected** — Playwright CLI (no reload required):
+
+```bash
+.venv/bin/python scripts/sendgru_playwright.py --rows "4-12" --apply-daily-cap
+```
+
+**C. Manual mark after MCP sends** (if you sent via browser MCP, not CLI):
+
+```bash
+.venv/bin/python scripts/sendgru_select.py --rows "{ROW}" --mark-sent
+```
+
+Playwright CLI marks rows automatically after successful sends.
 
 Do not send if H is empty or over 300 characters (Premium).
 Do not auto-run after Jobgru.

@@ -54,16 +54,24 @@
       "id": "skip_if_connected",
       "action": "check_snapshot",
       "skip_if_text": ["Message", "Pending"],
-      "skip_if_missing": ["Connect", "Invite"],
-      "notes": "If already 1st-degree (Message only) or Pending, skip person — do not mark row Sent"
+      "notes": "Skip when already 1st-degree (Message) or Pending. If blue Connect is in header, send. If Connect is missing but Follow is shown, use More menu (next steps)."
     },
     {
       "id": "click_connect",
       "action": "browser_click",
       "target": "Connect",
+      "notes": "Primary: blue Connect button in profile header. Opens modal with Add a note and Send without a note.",
       "fallback": [
-        { "action": "browser_click", "target": "More" },
-        { "action": "browser_click", "target": "Connect" }
+        {
+          "when": "Connect not visible AND Follow visible",
+          "action": "browser_click",
+          "target": "More"
+        },
+        {
+          "action": "browser_click",
+          "target": "Connect",
+          "notes": "Connect in More dropdown list — same modal as header Connect"
+        }
       ],
       "wait_after_sec": 2
     },

@@ -43,7 +43,7 @@ def verify_linkedin_session(context) -> bool:
         url = page.url.lower()
         if "/login" in url or "uas/login" in url:
             return False
-        return False
+        return True
     except Exception:
         return False
 
