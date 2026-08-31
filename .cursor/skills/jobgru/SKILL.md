@@ -505,7 +505,7 @@ Launch **LeadGru** and **ATSScore in parallel**:
 
 1. Read [`.cursor/skills/leadgru/SKILL.md`](../leadgru/SKILL.md).
 2. Pass `start_row`, `end_row`; process rows in range where Status is `to apply` and Leads (G) empty.
-3. **Sleep 40** after Phase 1 LinkedIn work, then LinkedIn people search (LeadGru [pacing](#linkedin-pacing-mandatory--never-skip)) → write **G only** per row (pipeline).
+3. **Sleep 40** after Phase 1 LinkedIn work, then for each row: open LinkedIn **apply link** (column C) for “Meet the hiring team” / job-poster profiles first, then people search (LeadGru [pacing](#linkedin-pacing-mandatory--never-skip)) → write **G only** per row (pipeline).
 
 ### ATSScore (Phase 2b)
 

@@ -20,10 +20,12 @@ Step 2 — Send (pick first working browser path):
 
 **Profile Connect (fixed — do not guess):**
 
-1. **Path A:** Blue **Connect** button in the profile header → click it.
-2. **Path B:** No Connect, but **Follow** is shown → click **More** → **Connect** in the dropdown list.
-3. Modal opens with **Add a note** and **Send without a note** — always use **Add a note** (never send without a note).
-4. Paste exact column H text → **Send invitation**.
+1. If **Pending** — skip this person.
+2. If **Message** only (already connected) — click **Message**, paste exact column H text, click **Send**.
+3. **Path A:** Blue **Connect** button in the profile header → click it.
+4. **Path B:** No Connect, but **Follow** is shown → click **More** → **Connect** in the dropdown list.
+5. Modal opens with **Add a note** and **Send without a note** — always use **Add a note** (never send without a note).
+6. Paste exact column H text → **Send invitation**.
 
 **B. If MCP disconnected** — Playwright CLI (no reload required):
 

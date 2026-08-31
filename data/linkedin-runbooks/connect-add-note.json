@@ -51,10 +51,28 @@
       "notes": "Confirm profile loaded; check stop_phrases in page text via CDP if needed"
     },
     {
-      "id": "skip_if_connected",
+      "id": "skip_if_pending",
       "action": "check_snapshot",
-      "skip_if_text": ["Message", "Pending"],
-      "notes": "Skip when already 1st-degree (Message) or Pending. If blue Connect is in header, send. If Connect is missing but Follow is shown, use More menu (next steps)."
+      "skip_if_text": ["Pending"],
+      "notes": "Skip when invite is pending. If Message is shown (1st-degree), use direct message flow instead of skipping."
+    },
+    {
+      "id": "send_if_connected",
+      "action": "browser_click",
+      "target": "Message",
+      "when": "Message visible and Connect not available",
+      "notes": "Already connected — open DM compose, paste column H, click Send (not connection invite).",
+      "fallback": [
+        {
+          "action": "browser_fill_or_type",
+          "text": "{NOTE_TEXT}"
+        },
+        {
+          "action": "browser_click",
+          "target": "Send",
+          "wait_after_sec": 3
+        }
+      ]
     },
     {
       "id": "click_connect",
@@ -122,6 +140,7 @@
     "Only rows with Status applied",
     "Skip rows where H already contains Sent add note",
     "Stop entire session on stop_phrases — no retries",
-    "Do not send InMail — connection invite + note only"
+    "If already 1st-degree connected (Message button, no Connect), send column H as a direct Message — do not skip",
+    "Do not send InMail — connection invite + note, or direct Message for existing connections"
   ]
 }

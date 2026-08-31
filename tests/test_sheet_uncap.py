@@ -12,7 +12,14 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from jobgru_linkedin_login import linkedin_logged_in, verify_linkedin_session  # noqa: E402
 from sheet_cells import sanitize_sheet_rows, sanitize_sheet_value  # noqa: E402
-from sheet_validate import SUMMARY_FORMULA_PATTERNS, SUMMARY_FORMULAS  # noqa: E402
+from sheet_validate import (  # noqa: E402
+    STATUS_CONDITIONAL_COLORS,
+    STATUS_DROPDOWN_VALUES,
+    SUMMARY_FORMULA_PATTERNS,
+    SUMMARY_FORMULAS,
+    build_status_conditional_format_requests,
+    status_cf_grid_range,
+)
 
 
 class SanitizeTests(unittest.TestCase):
@@ -137,6 +144,31 @@ class LastDataRowTests(unittest.TestCase):
                 return {"values": [["Co"]] * self.n}
 
         self.assertEqual(layout_end_row(FakeMeta(554), "id", "Job Applications"), 1000)
+
+
+class StatusConditionalFormatTests(unittest.TestCase):
+    def test_builds_rule_per_dropdown_value(self):
+        requests = build_status_conditional_format_requests(sheet_id=74243172)
+        self.assertEqual(len(requests), len(STATUS_DROPDOWN_VALUES))
+
+    def test_rules_cover_status_column_through_row_4999(self):
+        grid = status_cf_grid_range(74243172, end_row=5000)
+        self.assertEqual(grid["startColumnIndex"], 3)
+        self.assertEqual(grid["endColumnIndex"], 4)
+        self.assertEqual(grid["startRowIndex"], 1)
+        self.assertEqual(grid["endRowIndex"], 5000)
+
+    def test_each_status_uses_text_eq_and_color(self):
+        requests = build_status_conditional_format_requests(sheet_id=1)
+        seen: set[str] = set()
+        for req in requests:
+            rule = req["addConditionalFormatRule"]["rule"]["booleanRule"]
+            cond = rule["condition"]
+            self.assertEqual(cond["type"], "TEXT_EQ")
+            status = cond["values"][0]["userEnteredValue"]
+            seen.add(status)
+            self.assertEqual(rule["format"]["backgroundColor"], STATUS_CONDITIONAL_COLORS[status])
+        self.assertEqual(seen, set(STATUS_DROPDOWN_VALUES))
 
 
 class AppendSafetyTests(unittest.TestCase):

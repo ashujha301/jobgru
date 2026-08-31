@@ -1,6 +1,6 @@
 ---
 name: sendgru
-description: Jobgru on-demand — send LinkedIn connection invites with add-note text for user-named sheet rows. Only Status applied; 2 people per row from Leads; appends Sent add note to column H after success (does not replace the note). Never runs in the Jobgru pipeline. Use when the user says SendGru, send add notes, send connection notes, or names rows to send invites.
+description: Jobgru on-demand — send LinkedIn connection invites with add-note text for user-named sheet rows; if already connected, send column H as a direct Message instead. Only Status applied; 2 people per row from Leads; appends Sent add note to column H after success (does not replace the note). Never runs in the Jobgru pipeline. Use when the user says SendGru, send add notes, send connection notes, or names rows to send invites.
 ---
 
 # SendGru (on-demand connection + note)
@@ -103,15 +103,17 @@ Follow runbook steps in order:
 
 1. Navigate to `/in/` URL
 2. Snapshot — if page shows stop phrases (see runbook `stop_phrases`), **stop session**
-3. If **Message** only (already connected) or **Pending** — skip person, continue
-4. **Connect** (fixed two-path flow — do not guess):
+3. If **Pending** — skip person, continue
+4. If **Message** only (already 1st-degree connected, no Connect) — click **Message**, paste exact column H text, click **Send**
+5. If **Connect** fails to open the invite modal but **Message** is available — use **Message** (direct DM) with the same note text
+6. Otherwise **Connect** (fixed two-path flow — do not guess):
    - **Path A:** Blue **Connect** in profile header → click it
    - **Path B:** No Connect but **Follow** shown → **More** → **Connect** in dropdown
    - Modal opens with **Add a note** and **Send without a note**
-5. Click **Add a note** (if missing, skip person — do not use “Send without a note”)
-6. Paste **exact** column H text (`browser_fill` or type)
-7. Click **Send** / **Send invitation**
-8. Wait **5s**, snapshot to confirm dialog closed
+7. Click **Add a note** (if missing, skip person — do not use “Send without a note”)
+8. Paste **exact** column H text (`browser_fill` or type)
+9. Click **Send** / **Send invitation**
+10. Wait **5s**, snapshot to confirm dialog closed
 
 **Between companies** (after finishing a row’s people): extra **30s** before next row’s first profile.
 
@@ -123,8 +125,8 @@ After finishing a row (sent 1–2 people successfully on that row), **append** `
 .venv/bin/python scripts/sendgru_select.py --rows "{ROW}" --mark-sent
 ```
 
-- Mark row **only** if at least one invite sent successfully for that row
-- If both people skipped (already connected), **do not** append `Sent add note` — report row
+- Mark row **only** if at least one invite or direct message sent successfully for that row
+- If both people skipped (pending only — not already connected), **do not** append `Sent add note` — report row
 - If session stopped mid-row due to rate limit, **do not** mark partial rows unless user confirms
 - Do **not** `sheets_write.py write --value "Sent add note"` — that wipes the template text
 

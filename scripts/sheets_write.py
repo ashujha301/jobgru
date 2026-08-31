@@ -677,9 +677,9 @@ def cmd_restore_summary(args: argparse.Namespace) -> int:
 
 def cmd_format_layout(args: argparse.Namespace) -> int:
     service = sheets_service()
-    from sheet_validate import restore_summary_formulas
+    from sheet_validate import ensure_summary_and_status
 
-    restore_summary_formulas(service, args.spreadsheet_id, args.tab)
+    ensure_summary_and_status(service, args.spreadsheet_id, args.tab)
     result = apply_sheet_layout(
         service,
         args.spreadsheet_id,
@@ -705,10 +705,10 @@ def cmd_delete_rows(args: argparse.Namespace) -> int:
         return 0
 
     delete_sheet_rows(service, args.spreadsheet_id, args.tab, rows)
-    # Row deletion shrinks L2:M9 formula ranges — restore them.
-    from sheet_validate import restore_summary_formulas
+    # Row deletion may break L2:M9 — restore formulas when invalid; always refresh Status CF.
+    from sheet_validate import ensure_summary_and_status
 
-    restore_summary_formulas(service, args.spreadsheet_id, args.tab)
+    ensure_summary_and_status(service, args.spreadsheet_id, args.tab)
     apply_sheet_layout(
         service,
         args.spreadsheet_id,

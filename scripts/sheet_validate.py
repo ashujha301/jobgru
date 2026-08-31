@@ -74,6 +74,57 @@ STATUS_DROPDOWN_VALUES = [
     "to apply",
 ]
 
+# Column D (0-based index 3). Template CF only covered rows 2–40 and four statuses.
+STATUS_COLUMN_INDEX = 3
+STATUS_CF_START_ROW = 1  # 0-based → sheet row 2
+STATUS_CF_END_ROW = 5000  # exclusive → through row 4999
+
+STATUS_CONDITIONAL_COLORS: dict[str, dict[str, float]] = {
+    "Applied": {"red": 0.6784314, "green": 0.84705883, "blue": 0.9019608},
+    "Rejected": {"red": 0.95686275, "green": 0.8, "blue": 0.8},
+    "Interview": {"red": 1.0, "green": 1.0, "blue": 0.0},
+    "Selected": {"red": 0.7176471, "green": 0.8980392, "blue": 0.6},
+    "Assesment": {"red": 0.85, "green": 0.82, "blue": 0.93},
+    "Contacted": {"red": 0.85, "green": 0.92, "blue": 0.95},
+    "to apply": {"red": 1.0, "green": 0.9490196, "blue": 0.8},
+}
+
+
+def status_cf_grid_range(sheet_id: int, *, end_row: int = STATUS_CF_END_ROW) -> dict:
+    return {
+        "sheetId": sheet_id,
+        "startRowIndex": STATUS_CF_START_ROW,
+        "endRowIndex": max(end_row, STATUS_CF_START_ROW + 1),
+        "startColumnIndex": STATUS_COLUMN_INDEX,
+        "endColumnIndex": STATUS_COLUMN_INDEX + 1,
+    }
+
+
+def build_status_conditional_format_requests(sheet_id: int, *, end_row: int = STATUS_CF_END_ROW) -> list[dict]:
+    """Build addConditionalFormatRule requests for every Status dropdown value."""
+    grid = status_cf_grid_range(sheet_id, end_row=end_row)
+    requests: list[dict] = []
+    for status in STATUS_DROPDOWN_VALUES:
+        requests.append(
+            {
+                "addConditionalFormatRule": {
+                    "rule": {
+                        "ranges": [grid],
+                        "booleanRule": {
+                            "condition": {
+                                "type": "TEXT_EQ",
+                                "values": [{"userEnteredValue": status}],
+                            },
+                            "format": {
+                                "backgroundColor": STATUS_CONDITIONAL_COLORS[status],
+                            },
+                        },
+                    },
+                }
+            }
+        )
+    return requests
+
 
 def sheet_has_tab(service, spreadsheet_id: str, tab: str) -> bool:
     meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
@@ -150,7 +201,57 @@ def restore_summary_formulas(service, spreadsheet_id: str, tab: str) -> None:
         sanitize=False,
     )
     apply_summary_formatting(service, spreadsheet_id, tab)
+    ensure_status_formatting(service, spreadsheet_id, tab)
+
+
+def ensure_status_formatting(service, spreadsheet_id: str, tab: str) -> None:
+    """Status dropdown + conditional colors for all job rows (D2:D4999)."""
     restore_status_dropdown(service, spreadsheet_id, tab)
+    restore_status_conditional_formatting(service, spreadsheet_id, tab)
+
+
+def _delete_sheet_conditional_format_rules(service, spreadsheet_id: str, sheet_id: int) -> None:
+    meta = service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    for sheet in meta.get("sheets", []):
+        if sheet["properties"]["sheetId"] != sheet_id:
+            continue
+        count = len(sheet.get("conditionalFormats", []))
+        if not count:
+            return
+        requests = [
+            {"deleteConditionalFormatRule": {"sheetId": sheet_id, "index": index}}
+            for index in range(count - 1, -1, -1)
+        ]
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={"requests": requests},
+        ).execute()
+        return
+
+
+def restore_status_conditional_formatting(service, spreadsheet_id: str, tab: str) -> None:
+    """Replace legacy Status CF (rows 2–40, partial statuses) with full-column rules."""
+    from sheets_write import get_sheet_id, layout_end_row
+
+    sheet_id = get_sheet_id(service, spreadsheet_id, tab)
+    end_row = layout_end_row(service, spreadsheet_id, tab)
+    _delete_sheet_conditional_format_rules(service, spreadsheet_id, sheet_id)
+    requests = build_status_conditional_format_requests(sheet_id, end_row=end_row)
+    if requests:
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={"requests": requests},
+        ).execute()
+
+
+def ensure_summary_and_status(service, spreadsheet_id: str, tab: str) -> bool:
+    """Restore summary formulas only when invalid; always refresh Status dropdown + colors."""
+    ok, _ = validate_summary_formulas(service, spreadsheet_id, tab)
+    if ok:
+        ensure_status_formatting(service, spreadsheet_id, tab)
+    else:
+        restore_summary_formulas(service, spreadsheet_id, tab)
+    return ok
 
 
 def restore_status_dropdown(service, spreadsheet_id: str, tab: str) -> None:

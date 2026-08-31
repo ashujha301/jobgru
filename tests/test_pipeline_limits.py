@@ -13,7 +13,7 @@ import sys
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from jobgru_filters import RUN_LIMITS, catalog_text  # noqa: E402
-from leadgru_leads import MAX_PEOPLE_PER_COMPANY, format_leads, validate_leads_cell  # noqa: E402
+from leadgru_leads import MAX_PEOPLE_PER_COMPANY, format_leads, merge_leads, validate_leads_cell  # noqa: E402
 
 
 def _read(rel: str) -> str:
@@ -60,6 +60,19 @@ class LeadsCellTests(unittest.TestCase):
         text = "Company: https://www.linkedin.com/company/tiny/people/"
         self.assertEqual(validate_leads_cell(text), [])
 
+    def test_merge_leads_job_posting_first(self):
+        job = [("Hiring Mgr", "Engineering Manager", "https://www.linkedin.com/in/hiring-mgr/")]
+        search = [
+            ("Recruiter", "TA", "https://www.linkedin.com/in/recruiter/"),
+            ("Hiring Mgr", "Dup", "https://www.linkedin.com/in/hiring-mgr/"),
+            ("Eng Lead", "EM", "https://www.linkedin.com/in/eng-lead/"),
+        ]
+        text = merge_leads(job, search, "https://www.linkedin.com/company/birlasoft/people/")
+        lines = text.splitlines()
+        self.assertTrue(lines[0].startswith("Hiring Mgr"))
+        self.assertEqual(text.count("/in/"), 3)
+        self.assertIn("/company/birlasoft/people/", text)
+
 
 class SkillContractTests(unittest.TestCase):
     def test_jobgru_skill_uncap_and_pacing(self):
@@ -77,6 +90,7 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("/people/", skill)
         self.assertIn("Sleep 40 seconds", skill)
         self.assertIn("Never write 6+", skill)
+        self.assertIn("Meet the hiring team", skill)
         self.assertIn("SendGru", skill)
 
     def test_sendgru_skill_contract(self):

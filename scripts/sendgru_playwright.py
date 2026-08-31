@@ -154,24 +154,52 @@ def dropdown_connect_locator(page):
     return None
 
 
-def already_connected_or_pending(page) -> bool:
-    """Skip when Connect is unavailable and profile is already connected/pending."""
-    if header_connect_locator(page) is not None:
-        return False
-    if header_follow_visible(page) and header_more_locator(page) is not None:
-        return False
+def message_button_locator(page):
+    """Blue Message on profile when already 1st-degree connected."""
+    getters = [
+        lambda: page.get_by_role("button", name=re.compile(r"^Message$", re.I)),
+        lambda: page.get_by_role("link", name=re.compile(r"^Message$", re.I)),
+        lambda: page.locator('[aria-label*="Message" i]').filter(
+            has_text=re.compile(r"^Message$", re.I)
+        ),
+    ]
+    for getter in getters:
+        loc = _visible_locator(page, getter)
+        if loc is not None:
+            return loc
+    return None
+
+
+def is_pending(page) -> bool:
     text = page_text_lower(page)
     if "pending" in text:
         return True
     try:
         if page.get_by_role("button", name=re.compile(r"^Pending$", re.I)).count() > 0:
-            return True
-        msg = page.get_by_role("button", name=re.compile(r"^Message$", re.I)).first
-        if msg.count() > 0 and msg.is_visible(timeout=1500):
-            return True
+            btn = page.get_by_role("button", name=re.compile(r"^Pending$", re.I)).first
+            if btn.is_visible(timeout=1500):
+                return True
     except Exception:
         pass
     return False
+
+
+def is_first_degree_connected(page) -> bool:
+    """True when Message is available and Connect invite flow is not."""
+    if header_connect_locator(page) is not None:
+        return False
+    if header_follow_visible(page) and header_more_locator(page) is not None:
+        return False
+    if is_pending(page):
+        return False
+    return message_button_locator(page) is not None
+
+
+def already_connected_or_pending(page) -> bool:
+    """Legacy helper — pending skips; connected profiles are handled via direct message."""
+    if is_pending(page):
+        return True
+    return is_first_degree_connected(page)
 
 
 def click_connect(page) -> bool:
@@ -196,33 +224,60 @@ def click_connect(page) -> bool:
     return _safe_click(connect)
 
 
-def wait_for_invite_modal(page, *, timeout_sec: float = 8) -> bool:
-    """After Connect, LinkedIn shows Add a note / Send without a note."""
+def invite_modal(page):
+    """Topmost LinkedIn invite dialog (Connect → Add a note flow)."""
+    for sel in ('[role="dialog"]', ".artdeco-modal", "[data-test-modal]"):
+        try:
+            modal = page.locator(sel).last
+            if modal.count() > 0 and modal.is_visible(timeout=1500):
+                return modal
+        except Exception:
+            continue
+    return None
+
+
+def _normalize_note_text(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "").strip())
+
+
+def note_field_matches(expected: str, actual: str) -> bool:
+    exp = _normalize_note_text(expected)
+    got = _normalize_note_text(actual)
+    if not exp:
+        return False
+    return exp == got or exp in got
+
+
+def wait_for_invite_modal(page, *, timeout_sec: float = 8):
+    """Return modal locator once invite UI is visible."""
     deadline = time.time() + timeout_sec
-    patterns = [
-        re.compile(r"Add a note", re.I),
-        re.compile(r"Send without a note", re.I),
-        re.compile(r"Send invitation", re.I),
-    ]
     while time.time() < deadline:
-        for pat in patterns:
+        modal = invite_modal(page)
+        if modal is not None:
             try:
-                if page.get_by_text(pat).count() > 0:
-                    return True
+                text = modal.inner_text(timeout=2000).lower()
+                if any(
+                    p in text
+                    for p in ("add a note", "send without a note", "send invitation", "add note")
+                ):
+                    return modal
             except Exception:
                 pass
         time.sleep(0.5)
-    return False
+    return None
 
 
-def click_add_note(page) -> bool:
+def click_add_note(page, modal=None) -> bool:
+    modal = modal or invite_modal(page)
+    if modal is None:
+        return False
     patterns = [
         re.compile(r"Add a note", re.I),
         re.compile(r"Add note", re.I),
     ]
     for pat in patterns:
         try:
-            btn = page.get_by_role("button", name=pat).first
+            btn = modal.get_by_role("button", name=pat).first
             if btn.count() > 0 and btn.is_visible(timeout=3000):
                 btn.click(timeout=5000)
                 return True
@@ -231,7 +286,10 @@ def click_add_note(page) -> bool:
     return False
 
 
-def fill_note(page, note: str) -> bool:
+def fill_note(page, note: str, *, modal=None) -> bool:
+    modal = modal or invite_modal(page)
+    if modal is None:
+        return False
     selectors = [
         'textarea[name="message"]',
         "textarea#custom-message",
@@ -240,17 +298,34 @@ def fill_note(page, note: str) -> bool:
     ]
     for sel in selectors:
         try:
-            loc = page.locator(sel).first
+            loc = modal.locator(sel).first
             if loc.count() > 0 and loc.is_visible(timeout=3000):
                 loc.click(timeout=3000)
+                loc.fill("", timeout=3000)
                 loc.fill(note, timeout=5000)
-                return True
+                try:
+                    actual = loc.input_value(timeout=2000)
+                except Exception:
+                    actual = loc.inner_text(timeout=2000)
+                if note_field_matches(note, actual):
+                    return True
+                loc.click(timeout=3000)
+                loc.press("ControlOrMeta+A")
+                loc.fill(note, timeout=5000)
+                try:
+                    actual = loc.input_value(timeout=2000)
+                except Exception:
+                    actual = loc.inner_text(timeout=2000)
+                return note_field_matches(note, actual)
         except Exception:
             continue
     return False
 
 
-def click_send(page) -> bool:
+def click_send(page, *, modal=None) -> bool:
+    modal = modal or invite_modal(page)
+    if modal is None:
+        return False
     patterns = [
         re.compile(r"^Send invitation$", re.I),
         re.compile(r"^Send$", re.I),
@@ -258,7 +333,7 @@ def click_send(page) -> bool:
     ]
     for pat in patterns:
         try:
-            btn = page.get_by_role("button", name=pat).first
+            btn = modal.get_by_role("button", name=pat).first
             if btn.count() > 0 and btn.is_visible(timeout=3000):
                 btn.click(timeout=5000)
                 return True
@@ -267,10 +342,143 @@ def click_send(page) -> bool:
     return False
 
 
-def send_to_person(page, *, url: str, note: str, first_navigate: bool) -> tuple[str, str]:
+def message_compose(page):
+    """LinkedIn DM compose overlay after clicking Message on a profile."""
+    selectors = [
+        ".msg-overlay-conversation-bubble",
+        ".msg-convo-wrapper",
+        ".msg-form",
+        '[role="dialog"]',
+    ]
+    for sel in selectors:
+        try:
+            loc = page.locator(sel).last
+            if loc.count() > 0 and loc.is_visible(timeout=1500):
+                return loc
+        except Exception:
+            continue
+    return None
+
+
+def wait_for_message_compose(page, *, timeout_sec: float = 8):
+    deadline = time.time() + timeout_sec
+    while time.time() < deadline:
+        compose = message_compose(page)
+        if compose is not None:
+            try:
+                text = compose.inner_text(timeout=2000).lower()
+                if any(p in text for p in ("write a message", "send", "message")):
+                    return compose
+                if compose.locator('div[role="textbox"], textarea').count() > 0:
+                    return compose
+            except Exception:
+                return compose
+        time.sleep(0.5)
+    return None
+
+
+def fill_message(page, note: str, *, compose=None) -> bool:
+    compose = compose or message_compose(page)
+    if compose is None:
+        return False
+    selectors = [
+        'div[role="textbox"]',
+        "textarea",
+        ".msg-form__contenteditable",
+    ]
+    for sel in selectors:
+        try:
+            loc = compose.locator(sel).first
+            if loc.count() > 0 and loc.is_visible(timeout=3000):
+                loc.click(timeout=3000)
+                loc.fill("", timeout=3000)
+                loc.fill(note, timeout=5000)
+                try:
+                    actual = loc.input_value(timeout=2000)
+                except Exception:
+                    actual = loc.inner_text(timeout=2000)
+                if note_field_matches(note, actual):
+                    return True
+                loc.click(timeout=3000)
+                loc.press("ControlOrMeta+A")
+                loc.fill(note, timeout=5000)
+                try:
+                    actual = loc.input_value(timeout=2000)
+                except Exception:
+                    actual = loc.inner_text(timeout=2000)
+                return note_field_matches(note, actual)
+        except Exception:
+            continue
+    return False
+
+
+def click_message_send(page, *, compose=None) -> bool:
+    compose = compose or message_compose(page)
+    if compose is None:
+        return False
+    patterns = [
+        re.compile(r"^Send$", re.I),
+        re.compile(r"Send message", re.I),
+    ]
+    for pat in patterns:
+        try:
+            btn = compose.get_by_role("button", name=pat).first
+            if btn.count() > 0 and btn.is_visible(timeout=3000):
+                return _safe_click(btn)
+        except Exception:
+            continue
+    try:
+        btn = compose.locator('button[type="submit"], .msg-form__send-button').first
+        if btn.count() > 0 and btn.is_visible(timeout=3000):
+            return _safe_click(btn)
+    except Exception:
+        pass
+    return False
+
+
+def send_direct_message(page, note: str) -> tuple[str, str]:
+    msg_btn = message_button_locator(page)
+    if msg_btn is None:
+        return "skipped", "Message button not found"
+    if not _safe_click(msg_btn):
+        return "failed", "could not click Message"
+
+    time.sleep(2)
+    compose = wait_for_message_compose(page)
+    if compose is None:
+        return "failed", "message compose did not open"
+
+    time.sleep(1)
+    if not fill_message(page, note, compose=compose):
+        return "failed", "could not verify message text"
+
+    time.sleep(1)
+    if not click_message_send(page, compose=compose):
+        return "failed", "Send button not found in message compose"
+
+    time.sleep(3)
+    stop = check_stop(page)
+    if stop:
+        return "stopped", stop
+
+    return "sent", "ok (direct message)"
+
+
+def send_to_person(
+    page,
+    *,
+    url: str,
+    note: str,
+    company: str,
+    first_navigate: bool,
+) -> tuple[str, str]:
     if not first_navigate:
         delay = random.randint(PACING_MIN, PACING_MAX)
         time.sleep(delay)
+
+    note = (note or "").strip()
+    if not note:
+        return "failed", "empty note for row"
 
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=45000)
@@ -282,28 +490,34 @@ def send_to_person(page, *, url: str, note: str, first_navigate: bool) -> tuple[
     if stop:
         return "stopped", stop
 
-    if already_connected_or_pending(page):
-        return "skipped", "already connected or pending"
+    if is_pending(page):
+        return "skipped", "pending invitation"
+
+    if is_first_degree_connected(page):
+        return send_direct_message(page, note)
 
     if not click_connect(page):
         if header_follow_visible(page):
             return "skipped", "Connect not found in More menu"
         return "skipped", "Connect button not found"
 
-    if not wait_for_invite_modal(page):
+    modal = wait_for_invite_modal(page)
+    if modal is None:
+        if message_button_locator(page) is not None:
+            return send_direct_message(page, note)
         return "skipped", "Invite modal did not open"
 
     time.sleep(1)
-    if not click_add_note(page):
+    if not click_add_note(page, modal):
         return "skipped", "Add a note not available"
 
     time.sleep(1)
-    if not fill_note(page, note):
-        return "failed", "could not fill note"
+    if not fill_note(page, note, modal=modal):
+        return "failed", f"could not verify note for {company!r}"
 
     time.sleep(1)
-    if not click_send(page):
-        return "failed", "Send button not found"
+    if not click_send(page, modal=modal):
+        return "failed", "Send invitation button not found in modal"
 
     time.sleep(5)
     stop = check_stop(page)
@@ -414,10 +628,19 @@ def run_sendgru(
                 last_row = row_target.row
 
                 for person in row_target.people:
+                    # Re-read note from sheet so each person gets this row's exact H text.
+                    fresh, _, _ = load_actionable_rows(str(row_target.row), apply_daily_cap=False)
+                    row_note = fresh[0].note if fresh else row_target.note
+                    print(
+                        f"SendGru row {row_target.row} ({row_target.company}) → {person.name or person.url}",
+                        file=sys.stderr,
+                    )
+                    print(f"  note: {row_note[:80]}...", file=sys.stderr)
                     status, detail = send_to_person(
                         page,
                         url=person.url,
-                        note=row_target.note,
+                        note=row_note,
+                        company=row_target.company,
                         first_navigate=first_navigate,
                     )
                     first_navigate = False

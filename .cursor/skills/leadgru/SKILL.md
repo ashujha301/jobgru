@@ -1,6 +1,6 @@
 ---
 name: leadgru
-description: Jobgru pipeline Phase 2 — find LinkedIn hiring contacts for new Job Applications rows, write at most 5 profile links plus the company people page into Leads, and fill Add note Message from sheet templates. Runs automatically after Jobgru appends rows (pipeline mode), in parallel with ATSScore. Also use standalone when the user explicitly asks to backfill Leads for existing to apply rows without re-running Jobgru.
+description: Jobgru pipeline Phase 2 — find LinkedIn hiring contacts for new Job Applications rows (job-posting hiring team first, then people search), write at most 5 profile links plus the company people page into Leads, and fill Add note Message from sheet templates. Runs automatically after Jobgru appends rows (pipeline mode), in parallel with ATSScore. Also use standalone when the user explicitly asks to backfill Leads for existing to apply rows without re-running Jobgru.
 ---
 
 # LeadGru (Pipeline Phase 2)
@@ -173,8 +173,9 @@ Process every matching row in the batch.
 
 ## Who to find
 
-Priority for the row's Position:
+**Priority order (fill Leads top-to-bottom in this order, still max 5 `/in/` + company page):**
 
+0. **Job posting profiles (highest)** — people LinkedIn shows on the **apply link** (column C): “Meet the hiring team”, “People you can reach out to”, job poster, or any clickable `/in/` profile attached to the listing. See [Job posting hiring team](#job-posting-hiring-team-priority-leads).
 1. Recruiters, Talent Acquisition, HR, People Ops, sourcers
 2. Hiring managers (Engineering Manager, Head of Engineering, VP Eng, AI/ML lead)
 3. Team leads matching the role
@@ -183,7 +184,72 @@ For small companies (~50 employees or founding/startup roles):
 
 4. CEO, Founder, CTO, Founding Engineer, other founding ICs
 
-Only add people whose LinkedIn headline or current experience shows this company. Skip unrelated functions unless the company is tiny.
+Only add people whose LinkedIn headline or current experience shows this company — **except** profiles LinkedIn explicitly attaches to the job posting (treat those as verified for that role).
+
+Skip unrelated functions unless the company is tiny.
+
+## Job posting hiring team (priority leads)
+
+Many LinkedIn job pages (`linkedin.com/jobs/view/...`) show hiring contacts **on the listing itself** — not only in people search.
+
+**When column C is a LinkedIn jobs URL**, open it **before** company people search (counts as one of the **3 navigates per company** budget).
+
+### What to look for
+
+| UI label (examples) | Action |
+| --- | --- |
+| **Meet the hiring team** | Extract every `/in/` profile in that block |
+| **People you can reach out to** | Same |
+| **Job poster** / **Posted by** | Include poster’s `/in/` link |
+| Profile cards in the job sidebar or description | Any `/in/` link with name + title on the job page |
+
+Also scan the job description text for `linkedin.com/in/` links (some listings embed profile URLs in copy).
+
+### How to extract (CDP)
+
+After `browser_navigate` to column C apply link, wait **3s**, snapshot, then `browser_cdp` → `Runtime.evaluate`:
+
+```javascript
+(() => {
+  const sections = Array.from(document.querySelectorAll('section, div[class*="jobs"], div[class*="hiring"]'));
+  const hiringBlock = sections.find(el =>
+    /meet the hiring team|people you can reach out|hiring team|job poster|posted by/i.test(el.innerText || '')
+  );
+  const root = hiringBlock || document;
+  const seen = new Set();
+  return Array.from(root.querySelectorAll('a[href*="/in/"]'))
+    .map(a => ({
+      href: a.href.split('?')[0].replace(/\/+$/, '') + '/',
+      name: (a.querySelector('span[aria-hidden="true"]')?.innerText || a.innerText || '').split('\n')[0].trim(),
+      title: (a.closest('li, div')?.innerText || '').split('\n').slice(1, 3).join(' ').trim().slice(0, 80)
+    }))
+    .filter(x => x.href.includes('/in/') && x.name.length > 1)
+    .filter(x => { if (seen.has(x.href)) return false; seen.add(x.href); return true; })
+    .slice(0, 5);
+})()
+```
+
+If the block is empty, run a **whole-page fallback** (sidebar + description):
+
+```javascript
+Array.from(document.querySelectorAll('a[href*="/in/"]'))
+  .map(a => ({ href: a.href.split('?')[0], text: (a.closest('div')?.innerText || a.innerText || '').slice(0, 120) }))
+  .filter(x => x.text.length > 2)
+  .reduce((acc, x) => { if (!acc.find(y => y.href === x.href)) acc.push(x); return acc; }, [])
+  .slice(0, 5)
+```
+
+Manually keep profiles that look like hiring contacts (recruiter, hiring manager, poster) — drop random “similar profiles” or unrelated `/in/` links from footer/nav.
+
+### Merge into Leads
+
+1. Write **job-posting profiles first** (top lines in column G).
+2. If fewer than 5, fill remaining slots from [company people search](#per-company-search-repeat-for-each-row) (dedupe by URL — never list the same `/in/` twice).
+3. Still append `Company: .../people/` as the last line.
+
+Example (Birlasoft-style): hiring manager from “Meet the hiring team” on the job page → line 1; then up to 4 more from people search.
+
+Helper: `scripts/leadgru_leads.py` → `merge_leads(priority_people, search_people, company_url)` dedupes and applies the 5-person cap.
 
 ## How many people
 
@@ -306,6 +372,19 @@ Correct order: navigate (if needed) → lock → searches → unlock.
 ### Per-company search (repeat for each row)
 
 **Before each company after the first:** sleep **40 seconds** ([LinkedIn pacing](#linkedin-pacing-mandatory--never-skip)). First company in a locked session may navigate immediately.
+
+**Step 0 — Job posting hiring team (when apply link is LinkedIn)**
+
+If column C matches `linkedin.com/jobs/view/` or `linkedin.com/jobs/collections/`:
+
+1. If this is not the first LinkedIn navigate of the phase, **sleep 40s** first.
+2. `browser_navigate` to column C apply URL.
+3. Wait **3s**, snapshot — check for [job posting hiring team](#job-posting-hiring-team-priority-leads) UI.
+4. Run CDP extract; save profiles as **priority leads** (name, title, `/in/` URL).
+5. If you already have **5** verified `/in/` URLs from the job page alone, skip to Step 6 (company page) — still need the `Company:` line.
+6. Otherwise continue to Step 2 people search to fill remaining slots (max **5** total people).
+
+If column C is **not** LinkedIn (Wellfound, company careers site, etc.), skip Step 0 and start at Step 2.
 
 **Step 1 — Normalize company name for search**
 

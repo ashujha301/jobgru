@@ -18,9 +18,14 @@ Process every row where Status (column D) is "to apply" and Leads (column G) is 
 Do NOT limit to a specific row range unless the user named one (e.g. "rows 27–31 only").
 
 Step 2 — LinkedIn (Cursor Browser, one company at a time):
-  browser_navigate → browser_lock → people search URL → CDP extract → browser_unlock when done
+  browser_navigate → browser_lock → for each row:
+    (0) If apply link (column C) is linkedin.com/jobs/view/... — open job page first;
+        extract "Meet the hiring team" / job poster / any /in/ profiles on the listing (priority leads)
+    (1) people search URL → CDP extract → fill remaining slots up to 5 total
+  browser_unlock when done
   Primary URL: https://www.linkedin.com/search/results/people/?keywords={COMPANY}&origin=GLOBAL_SEARCH_HEADER
   Use .linked-area CDP pattern from skill; WebSearch to verify /in/ slugs — never guess URLs.
+  Job-posting profiles go FIRST in column G; dedupe URLs; merge with search results (max 5 /in/).
 
 Step 3 — Write each row immediately via Sheets API (NOT browser):
   scripts/sheets_write.py write --range "G{R}:H{R}" --json '[["<leads>", "<note>"]]'

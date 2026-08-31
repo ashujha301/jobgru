@@ -13,6 +13,35 @@ COMPANY_RE = re.compile(
 )
 
 
+def _normalize_in_url(url: str) -> str:
+    m = IN_RE.search(url or "")
+    if not m:
+        return ""
+    return m.group(0).rstrip("/") + "/"
+
+
+def merge_leads(
+    priority: list[tuple[str, str, str]],
+    extra: list[tuple[str, str, str]],
+    company_people_url: str,
+) -> str:
+    """Dedupe by /in/ URL; job-posting profiles first; cap at 5; append Company line."""
+    seen: set[str] = set()
+    merged: list[tuple[str, str, str]] = []
+    for source in (priority, extra):
+        for name, title, url in source:
+            norm = _normalize_in_url(url)
+            if not norm or norm in seen:
+                continue
+            seen.add(norm)
+            merged.append((name.strip(), title.strip(), norm))
+            if len(merged) >= MAX_PEOPLE_PER_COMPANY:
+                break
+        if len(merged) >= MAX_PEOPLE_PER_COMPANY:
+            break
+    return format_leads(merged, company_people_url)
+
+
 def format_leads(
     people: list[tuple[str, str, str]],
     company_people_url: str,
