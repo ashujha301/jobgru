@@ -46,6 +46,66 @@ PACING_MIN = 60
 PACING_MAX = 90
 BETWEEN_COMPANIES_EXTRA = 30
 
+# Profile action bar is left column; sidebar "More profiles for you" is ~x>=740.
+PROFILE_ACTION_MIN_Y = 100
+PROFILE_ACTION_MAX_X = 700
+PROFILE_ACTION_Y_TOLERANCE = 80
+
+
+def _leftmost_visible_locator(
+    root_locator,
+    *,
+    max_x: float = PROFILE_ACTION_MAX_X,
+    min_y: float = PROFILE_ACTION_MIN_Y,
+    y_anchor: float | None = None,
+    y_tolerance: float = PROFILE_ACTION_Y_TOLERANCE,
+):
+    """Pick the leftmost visible control in the profile header (not sidebar/nav)."""
+    best = None
+    best_x = float("inf")
+    try:
+        count = root_locator.count()
+    except Exception:
+        return None
+    for i in range(count):
+        el = root_locator.nth(i)
+        try:
+            if not el.is_visible(timeout=500):
+                continue
+            box = el.bounding_box()
+            if not box:
+                continue
+            if box["y"] < min_y or box["x"] > max_x:
+                continue
+            if y_anchor is not None and abs(box["y"] - y_anchor) > y_tolerance:
+                continue
+            if box["x"] < best_x:
+                best_x = box["x"]
+                best = el
+        except Exception:
+            continue
+    return best
+
+
+def _profile_follow_locator(page):
+    return _leftmost_visible_locator(
+        page.locator("main").get_by_role(
+            "button",
+            name=re.compile(r"^Follow\b", re.I),
+        )
+    )
+
+
+def _profile_action_y_anchor(page) -> float | None:
+    follow = _profile_follow_locator(page)
+    if follow is None:
+        return None
+    try:
+        box = follow.bounding_box()
+        return box["y"] if box else None
+    except Exception:
+        return None
+
 
 @dataclass
 class SendResult:
@@ -107,45 +167,39 @@ def _safe_click(loc, *, timeout_ms: int = 5000) -> bool:
 
 
 def header_connect_locator(page):
-    """Blue Connect in the profile header (primary path)."""
-    getters = [
-        lambda: page.get_by_role("button", name=re.compile(r"^Connect$", re.I)),
-        lambda: page.get_by_role("link", name=re.compile(r"^Connect$", re.I)),
-        lambda: page.locator('[aria-label*="Invite"][aria-label*="connect" i]'),
-        lambda: page.locator("main button, main a").filter(
-            has_text=re.compile(r"^Connect$", re.I)
-        ),
-    ]
-    for getter in getters:
-        loc = _visible_locator(page, getter)
-        if loc is not None:
-            return loc
-    return None
+    """Blue Connect in the profile header (primary path), not sidebar suggestions."""
+    y_anchor = _profile_action_y_anchor(page)
+    for role in ("button", "link"):
+        loc = page.locator("main").get_by_role(role, name=re.compile(r"^Connect$", re.I))
+        found = _leftmost_visible_locator(loc, y_anchor=y_anchor)
+        if found is not None:
+            return found
+    loc = page.locator("main").locator('[aria-label*="Invite"][aria-label*="connect" i]')
+    return _leftmost_visible_locator(loc, y_anchor=y_anchor)
 
 
 def header_follow_visible(page) -> bool:
-    return _visible_locator(
-        page,
-        lambda: page.get_by_role("button", name=re.compile(r"^Follow$", re.I)),
-    ) is not None
+    return _profile_follow_locator(page) is not None
 
 
 def header_more_locator(page):
-    return _visible_locator(
-        page,
-        lambda: page.get_by_role("button", name=re.compile(r"^More\b", re.I)),
+    """More dropdown beside Follow/Message — not global nav or sidebar."""
+    return _leftmost_visible_locator(
+        page.locator("main").get_by_role("button", name=re.compile(r"^More$", re.I)),
+        y_anchor=_profile_action_y_anchor(page),
     )
 
 
 def dropdown_connect_locator(page):
-    """Connect inside the More dropdown list."""
+    """Connect inside the More dropdown list (menu), not sidebar cards."""
     getters = [
         lambda: page.get_by_role("menuitem", name=re.compile(r"^Connect$", re.I)),
-        lambda: page.get_by_role("button", name=re.compile(r"^Connect$", re.I)),
-        lambda: page.locator('[role="menu"] button, [role="menu"] a, .artdeco-dropdown__content-inner button, .artdeco-dropdown__content-inner a').filter(
+        lambda: page.locator('[role="menu"] button, [role="menu"] a').filter(
             has_text=re.compile(r"^Connect$", re.I)
         ),
-        lambda: page.locator('[aria-label*="Invite"][aria-label*="connect" i]'),
+        lambda: page.locator(".artdeco-dropdown__content-inner button, .artdeco-dropdown__content-inner a").filter(
+            has_text=re.compile(r"^Connect$", re.I)
+        ),
     ]
     for getter in getters:
         loc = _visible_locator(page, getter, timeout_ms=1500)
@@ -155,19 +209,17 @@ def dropdown_connect_locator(page):
 
 
 def message_button_locator(page):
-    """Blue Message on profile when already 1st-degree connected."""
-    getters = [
-        lambda: page.get_by_role("button", name=re.compile(r"^Message$", re.I)),
-        lambda: page.get_by_role("link", name=re.compile(r"^Message$", re.I)),
-        lambda: page.locator('[aria-label*="Message" i]').filter(
-            has_text=re.compile(r"^Message$", re.I)
-        ),
-    ]
-    for getter in getters:
-        loc = _visible_locator(page, getter)
-        if loc is not None:
-            return loc
-    return None
+    """Profile header Message — not sidebar 'Message {name}' links."""
+    y_anchor = _profile_action_y_anchor(page)
+    for role in ("button", "link"):
+        loc = page.locator("main").get_by_role(role, name=re.compile(r"^Message$", re.I))
+        found = _leftmost_visible_locator(loc, y_anchor=y_anchor)
+        if found is not None:
+            return found
+    loc = page.locator("main").locator('[aria-label*="Message" i]').filter(
+        has_text=re.compile(r"^Message$", re.I)
+    )
+    return _leftmost_visible_locator(loc, y_anchor=y_anchor)
 
 
 def is_pending(page) -> bool:
@@ -224,15 +276,33 @@ def click_connect(page) -> bool:
     return _safe_click(connect)
 
 
+_INVITE_MODAL_PHRASES = (
+    "add a note",
+    "send without a note",
+    "send invitation",
+    "personalize your invitation",
+)
+
+
 def invite_modal(page):
-    """Topmost LinkedIn invite dialog (Connect → Add a note flow)."""
-    for sel in ('[role="dialog"]', ".artdeco-modal", "[data-test-modal]"):
+    """LinkedIn invite dialog (Connect → Add a note flow), not message overlays."""
+    selectors = ('[role="dialog"]', ".artdeco-modal", "[data-test-modal]")
+    for sel in selectors:
         try:
-            modal = page.locator(sel).last
-            if modal.count() > 0 and modal.is_visible(timeout=1500):
-                return modal
+            loc = page.locator(sel)
+            count = loc.count()
         except Exception:
             continue
+        for i in range(count - 1, -1, -1):
+            modal = loc.nth(i)
+            try:
+                if not modal.is_visible(timeout=500):
+                    continue
+                text = modal.inner_text(timeout=1500).lower()
+            except Exception:
+                continue
+            if any(p in text for p in _INVITE_MODAL_PHRASES):
+                return modal
     return None
 
 
@@ -256,10 +326,7 @@ def wait_for_invite_modal(page, *, timeout_sec: float = 8):
         if modal is not None:
             try:
                 text = modal.inner_text(timeout=2000).lower()
-                if any(
-                    p in text
-                    for p in ("add a note", "send without a note", "send invitation", "add note")
-                ):
+                if any(p in text for p in _INVITE_MODAL_PHRASES):
                     return modal
             except Exception:
                 pass

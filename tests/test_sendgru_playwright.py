@@ -12,14 +12,17 @@ SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from sendgru_playwright import (  # noqa: E402
+    _leftmost_visible_locator,
     already_connected_or_pending,
     check_stop,
     click_connect,
     header_connect_locator,
     header_follow_visible,
+    header_more_locator,
     is_first_degree_connected,
     is_pending,
     load_actionable_rows,
+    message_button_locator,
     send_direct_message,
 )
 
@@ -36,6 +39,36 @@ class StopPhraseTests(unittest.TestCase):
         self.assertIsNone(check_stop(page))
 
 
+class ProfileActionScopeTests(unittest.TestCase):
+    def test_leftmost_skips_sidebar_x(self):
+        root = MagicMock()
+        sidebar = MagicMock()
+        sidebar.is_visible.return_value = True
+        sidebar.bounding_box.return_value = {"x": 965, "y": 531, "width": 58, "height": 32}
+        header = MagicMock()
+        header.is_visible.return_value = True
+        header.bounding_box.return_value = {"x": 300, "y": 531, "width": 58, "height": 32}
+        root.count.return_value = 2
+        root.nth.side_effect = lambda i: header if i == 0 else sidebar
+
+        picked = _leftmost_visible_locator(root, y_anchor=531)
+        self.assertIs(picked, header)
+
+    def test_header_more_uses_profile_action_scope(self):
+        page = MagicMock()
+        more_btn = MagicMock()
+        with unittest.mock.patch(
+            "sendgru_playwright._leftmost_visible_locator", return_value=more_btn
+        ) as pick, unittest.mock.patch(
+            "sendgru_playwright._profile_action_y_anchor", return_value=531.0
+        ):
+            result = header_more_locator(page)
+        self.assertIs(result, more_btn)
+        pick.assert_called_once()
+        args, kwargs = pick.call_args
+        self.assertEqual(kwargs.get("y_anchor"), 531.0)
+
+
 class ConnectedTests(unittest.TestCase):
     def test_pending_without_connect(self):
         page = MagicMock()
@@ -48,60 +81,34 @@ class ConnectedTests(unittest.TestCase):
     def test_connect_in_header_not_skipped(self):
         page = MagicMock()
         page.inner_text.return_value = ""
-
-        def role_side_effect(role, name=None, **kwargs):
-            m = MagicMock()
-            pat = getattr(name, "pattern", "") if name else ""
-            if role == "button" and pat == "^Connect$":
-                m.count.return_value = 1
-                m.first.is_visible.return_value = True
-            else:
-                m.count.return_value = 0
-            return m
-
-        page.get_by_role.side_effect = role_side_effect
-        page.locator.return_value.count.return_value = 0
-        self.assertFalse(is_first_degree_connected(page))
-        self.assertFalse(already_connected_or_pending(page))
+        with unittest.mock.patch("sendgru_playwright.header_connect_locator", return_value=MagicMock()), unittest.mock.patch(
+            "sendgru_playwright.header_follow_visible", return_value=False
+        ), unittest.mock.patch("sendgru_playwright.header_more_locator", return_value=None), unittest.mock.patch(
+            "sendgru_playwright.message_button_locator", return_value=None
+        ), unittest.mock.patch("sendgru_playwright.is_pending", return_value=False):
+            self.assertFalse(is_first_degree_connected(page))
+            self.assertFalse(already_connected_or_pending(page))
 
     def test_follow_and_more_not_skipped(self):
         page = MagicMock()
         page.inner_text.return_value = ""
-
-        def role_side_effect(role, name=None, **kwargs):
-            m = MagicMock()
-            if role == "button" and name and getattr(name, "pattern", "") == "^Follow$":
-                m.count.return_value = 1
-                m.first.is_visible.return_value = True
-            elif role == "button" and name and getattr(name, "pattern", "") == "^More\\b":
-                m.count.return_value = 1
-                m.first.is_visible.return_value = True
-            else:
-                m.count.return_value = 0
-            return m
-
-        page.get_by_role.side_effect = role_side_effect
-        page.locator.return_value.count.return_value = 0
-        self.assertFalse(is_first_degree_connected(page))
+        with unittest.mock.patch("sendgru_playwright.header_connect_locator", return_value=None), unittest.mock.patch(
+            "sendgru_playwright.header_follow_visible", return_value=True
+        ), unittest.mock.patch("sendgru_playwright.header_more_locator", return_value=MagicMock()), unittest.mock.patch(
+            "sendgru_playwright.is_pending", return_value=False
+        ):
+            self.assertFalse(is_first_degree_connected(page))
 
     def test_message_only_is_connected_not_pending_skip(self):
         page = MagicMock()
         page.inner_text.return_value = ""
-
-        def role_side_effect(role, name=None, **kwargs):
-            m = MagicMock()
-            pat = getattr(name, "pattern", "") if name else ""
-            if role == "button" and pat == "^Message$":
-                m.count.return_value = 1
-                m.first.is_visible.return_value = True
-            else:
-                m.count.return_value = 0
-            return m
-
-        page.get_by_role.side_effect = role_side_effect
-        page.locator.return_value.count.return_value = 0
-        self.assertTrue(is_first_degree_connected(page))
-        self.assertTrue(already_connected_or_pending(page))
+        with unittest.mock.patch("sendgru_playwright.header_connect_locator", return_value=None), unittest.mock.patch(
+            "sendgru_playwright.header_follow_visible", return_value=False
+        ), unittest.mock.patch("sendgru_playwright.header_more_locator", return_value=None), unittest.mock.patch(
+            "sendgru_playwright.message_button_locator", return_value=MagicMock()
+        ), unittest.mock.patch("sendgru_playwright.is_pending", return_value=False):
+            self.assertTrue(is_first_degree_connected(page))
+            self.assertTrue(already_connected_or_pending(page))
 
 
 class DirectMessageTests(unittest.TestCase):
@@ -133,56 +140,24 @@ class ConnectClickTests(unittest.TestCase):
     def test_header_connect_clicked(self):
         page = MagicMock()
         connect = MagicMock()
-        connect.count.return_value = 1
-        connect.first.is_visible.return_value = True
-        connect.first.click.return_value = None
-
-        def role_side_effect(role, name=None, **kwargs):
-            m = MagicMock()
-            if role == "button" and name and getattr(name, "pattern", "") == "^Connect$":
-                return connect
-            m.count.return_value = 0
-            return m
-
-        page.get_by_role.side_effect = role_side_effect
-        page.locator.return_value.count.return_value = 0
-        self.assertTrue(click_connect(page))
-        connect.first.click.assert_called()
+        with unittest.mock.patch("sendgru_playwright.header_connect_locator", return_value=connect), unittest.mock.patch(
+            "sendgru_playwright._safe_click", return_value=True
+        ) as click:
+            self.assertTrue(click_connect(page))
+        click.assert_called_with(connect)
 
     def test_follow_uses_more_menu(self):
         page = MagicMock()
-        follow = MagicMock()
-        follow.count.return_value = 1
-        follow.first.is_visible.return_value = True
         more = MagicMock()
-        more.count.return_value = 1
-        more.first.is_visible.return_value = True
-        more.first.click.return_value = None
         menu_connect = MagicMock()
-        menu_connect.count.return_value = 1
-        menu_connect.first.is_visible.return_value = True
-        menu_connect.first.click.return_value = None
-
-        call_idx = {"n": 0}
-
-        def role_side_effect(role, name=None, **kwargs):
-            m = MagicMock()
-            pat = getattr(name, "pattern", "") if name else ""
-            if role == "button" and pat == "^Connect$":
-                call_idx["n"] += 1
-                return menu_connect if call_idx["n"] > 1 else MagicMock(count=MagicMock(return_value=0))
-            if role == "button" and pat == "^Follow$":
-                return follow
-            if role == "button" and pat == "^More\\b":
-                return more
-            m.count.return_value = 0
-            return m
-
-        page.get_by_role.side_effect = role_side_effect
-        page.locator.return_value.count.return_value = 0
-        self.assertTrue(click_connect(page))
-        more.first.click.assert_called()
-        menu_connect.first.click.assert_called()
+        with unittest.mock.patch("sendgru_playwright.header_connect_locator", return_value=None), unittest.mock.patch(
+            "sendgru_playwright.header_follow_visible", return_value=True
+        ), unittest.mock.patch("sendgru_playwright.header_more_locator", return_value=more), unittest.mock.patch(
+            "sendgru_playwright.dropdown_connect_locator", return_value=menu_connect
+        ), unittest.mock.patch("sendgru_playwright._safe_click", side_effect=[True, True]) as click:
+            self.assertTrue(click_connect(page))
+        self.assertEqual(click.call_args_list[0][0][0], more)
+        self.assertEqual(click.call_args_list[1][0][0], menu_connect)
 
 
 class SendFlowFallbackTests(unittest.TestCase):

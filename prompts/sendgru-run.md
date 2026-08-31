@@ -23,7 +23,7 @@ Step 2 — Send (pick first working browser path):
 1. If **Pending** — skip this person.
 2. If **Message** only (already connected) — click **Message**, paste exact column H text, click **Send**.
 3. **Path A:** Blue **Connect** button in the profile header → click it.
-4. **Path B:** No Connect, but **Follow** is shown → click **More** → **Connect** in the dropdown list.
+4. **Path B:** No Connect, but **Follow** is shown → click **More** in the **profile header action row** (grey button next to Follow/Message — **not** the right sidebar “More profiles for you”) → **Connect** in the dropdown.
 5. Modal opens with **Add a note** and **Send without a note** — always use **Add a note** (never send without a note).
 6. Paste exact column H text → **Send invitation**.
 

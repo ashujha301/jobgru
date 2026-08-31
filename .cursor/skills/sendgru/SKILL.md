@@ -108,7 +108,7 @@ Follow runbook steps in order:
 5. If **Connect** fails to open the invite modal but **Message** is available — use **Message** (direct DM) with the same note text
 6. Otherwise **Connect** (fixed two-path flow — do not guess):
    - **Path A:** Blue **Connect** in profile header → click it
-   - **Path B:** No Connect but **Follow** shown → **More** → **Connect** in dropdown
+   - **Path B:** No Connect, but **Follow** is shown → click **More** (grey button **beside** Follow/Message in the profile header — **not** the sidebar “More profiles for you”) → **Connect** in that dropdown
    - Modal opens with **Add a note** and **Send without a note**
 7. Click **Add a note** (if missing, skip person — do not use “Send without a note”)
 8. Paste **exact** column H text (`browser_fill` or type)
